@@ -1,0 +1,121 @@
+﻿<Page
+    x:Class="AcaiaLogger.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:AcaiaLogger"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    x:Name="Main"
+    mc:Ignorable="d">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <SplitView x:Name="Splitter" IsPaneOpen="True" Grid.Column="1" DisplayMode="Inline" Grid.Row="1">
+            <SplitView.Pane>
+                <StackPanel x:Name="PanePanel" Orientation="Vertical" >
+                    <!-- Provide an AutomationProperties.Name for a list to a screen reader. A shipping app would localize this. -->
+                    <ListBox x:Name="ScenarioControl" SelectionChanged="ScenarioControl_SelectionChanged" AutomationProperties.Name="Scenarios"
+                             SelectionMode="Single" HorizontalAlignment="Left" Background="Transparent" BorderThickness="0"
+                             VerticalAlignment="Top" Margin="0,10,0,0" RelativePanel.Below="FooterPanel" FontSize="18">
+                    </ListBox>
+                    <StackPanel x:Name="FooterPanel" Orientation="Vertical">
+                        <StackPanel x:Name="LinksPanel" Orientation="Horizontal" Margin="10,10,0,10"/>
+                    </StackPanel>
+                </StackPanel>
+            </SplitView.Pane>
+            <RelativePanel>
+                <Grid x:Name="MainGrid" Margin="10,0,0,10" RelativePanel.AlignTopWithPanel="True" RelativePanel.Above="StatusPanel" RelativePanel.AlignRightWithPanel="True" RelativePanel.AlignLeftWithPanel="True">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>                        
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- 
+                    StackPanel LogBrew
+                    -->
+                    <StackPanel  x:Name="PanelLogBrew" Grid.Row="0" Margin="0,0,0,10">
+                        <TextBlock Text="Connect Acaia scale"  Margin="0,10,0,10" Style="{StaticResource SampleHeaderTextStyle}"/>
+                        <TextBlock TextWrapping="Wrap"   Margin="0,10,0,10" >
+                Enumerate nearby Bluetooth Low Energy devices, then select and pair a device which name starts with "PROCH" or "ACAIA"
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap"   Margin="0,10,0,10" >
+                Once the connection is established, enable notification for the weight measurements
+                        </TextBlock>
+                        <StackPanel Margin="0,10,0,0" Orientation="Horizontal">
+                            <Button x:Name="BtnConnect" Content="Connect" Margin="0,10,10,10" FontSize="24" Click="BtnConnect_Click" />
+                            <Button x:Name="BtnDisconnect" Content="Disconnect" Margin="0,10,10,10" IsEnabled="False" FontSize="24" Click="BtnDisconnect_Click" />
+                        </StackPanel>
+
+                        <TextBlock Text="Log a brew"  Margin="0,30,0,10" Style="{StaticResource SampleHeaderTextStyle}"/>
+                        <StackPanel Margin="0,10,0,0" Orientation="Horizontal">
+                            <Button x:Name="BtnBeansWeight" Content="Beans Weight" Margin="0,10,10,10" IsEnabled="False" FontSize="24"/>
+                            <Button x:Name="BtnTare" Content="Tare" Margin="30,10,10,10" IsEnabled="False" FontSize="24" Click="BtnTare_Click" />
+                            <Button x:Name="BtnStartLog" Content="Start" Margin="30,10,10,10" IsEnabled="False" FontSize="24"/>
+                            <Button x:Name="BtnStopLog" Content="Stop" Margin="30,10,10,10" IsEnabled="False" FontSize="24" />
+                        </StackPanel>
+                        <StackPanel Margin="0,30,0,0" Orientation="Horizontal">
+                            <TextBlock Text="Time"  Margin="0,10,10,10"  FontSize="36"/>
+                            <TextBlock x:Name="LogBrewTime" Text="---"  Margin="10,10,10,10" FontSize="36" AutomationProperties.LiveSetting="Assertive"/>
+                            <TextBlock Text="sec    Weight"  Margin="0,10,10,10" FontSize="36"/>
+                            <TextBlock x:Name="LogBrewWeight" Text="---"  Margin="10,10,10,10" FontSize="36" AutomationProperties.LiveSetting="Assertive"/>
+                            <TextBlock Text="g"  Margin="0,10,10,10" FontSize="36"/>
+                        </StackPanel>
+
+
+                    </StackPanel>
+
+                    <!-- 
+                    StackPanel BrewDetails
+                    -->
+                    <StackPanel  x:Name="PanelBrewDetails" Grid.Row="1" Margin="0,0,0,10">
+                        <TextBlock Text="Brew Details" Style="{StaticResource SampleHeaderTextStyle}"/>
+                        <StackPanel Margin="0,10,0,0" Orientation="Horizontal">
+                            <Button x:Name="BtnSaveLog" Content="Save" Margin="0,10,10,10" IsEnabled="False" FontSize="24" />                            
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- 
+                    List view ResultsListView
+                    -->
+
+                    <ScrollViewer x:Name="ScrollViewerBrewList" VerticalScrollMode="Auto" VerticalScrollBarVisibility="Auto" Grid.Row="2" Margin="0,10,0,0"
+                      BorderBrush="AntiqueWhite" BorderThickness="1" Visibility="Collapsed">
+                        <ListView x:Name="ResultsListView" />
+                        <!-- ItemTemplate="{StaticResource ResultsListViewTemplate}" ItemsSource="{x:Bind KnownDevices, Mode=OneWay}" -->
+                    </ScrollViewer>
+
+                </Grid>
+
+                <!-- 
+                StatusPanel
+                -->
+                
+                <StackPanel x:Name="StatusPanel" Orientation="Vertical" RelativePanel.AlignBottomWithPanel="True" RelativePanel.AlignRightWithPanel="True" RelativePanel.AlignLeftWithPanel="True">
+                    <TextBlock x:Name="StatusLabel" Margin="10,0,0,10" TextWrapping="Wrap" Text="Status:" />
+                    <Border x:Name="StatusBorder" Margin="0,0,0,0">
+                        <ScrollViewer VerticalScrollMode="Auto"  VerticalScrollBarVisibility="Auto" MaxHeight="200">
+                            <!-- Use LiveSetting to enable screen readers to announce the status update. -->
+                            <TextBlock x:Name="StatusBlock" FontWeight="Bold" AutomationProperties.LiveSetting="Assertive"
+                                   MaxWidth="{Binding ElementName=Splitter, Path=ActualWidth}" Margin="10,10,10,20" TextWrapping="Wrap"  />
+                        </ScrollViewer>
+                    </Border>
+                </StackPanel>
+            </RelativePanel>
+        </SplitView>
+
+        <StackPanel x:Name="HeaderPanel" Orientation="Horizontal">
+            <Border Background="{ThemeResource SystemControlBackgroundChromeMediumBrush}" Grid.Row="0">
+                <ToggleButton Style="{StaticResource SymbolButton}" Click="MenuToggleButton_Click" VerticalAlignment="Top" Foreground="{ThemeResource ApplicationForegroundThemeBrush}">
+                    <ToggleButton.Content>
+                        <FontIcon x:Name="Hamburger" FontFamily="Segoe MDL2 Assets" Glyph="&#xE700;" Margin="0,10,0,0"/>
+                    </ToggleButton.Content>
+                </ToggleButton>
+            </Border>
+            <TextBlock x:Name="Header" Text="Acaia scale logger" Style="{StaticResource TagLineTextStyle}" Margin="0,15,0,0" FontSize="22" />
+        </StackPanel>
+    </Grid>
+</Page>
