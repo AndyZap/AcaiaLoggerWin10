@@ -49,6 +49,7 @@
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
     <Compile Include="EnumerateDevices.cs" />
+    <Compile Include="FileLog.cs" />
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>

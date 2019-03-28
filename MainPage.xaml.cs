@@ -53,7 +53,7 @@ namespace AcaiaLogger
             if (Window.Current.Bounds.Width < 640)
                 ScenarioControl.SelectedIndex = -1;
             else
-                ScenarioControl.SelectedIndex = 0;
+                ScenarioControl.SelectedIndex = 1;   // TEST
         }
 
         private void ScenarioControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -423,6 +423,7 @@ namespace AcaiaLogger
         {
             WriteTare();
         }
+
     }
 
     public enum NotifyType { StatusMessage, ErrorMessage };
