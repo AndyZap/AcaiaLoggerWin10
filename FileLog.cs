@@ -12,26 +12,63 @@ using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using Windows.Devices.Enumeration;
 using Windows.Security.Cryptography;
+using System.Text;
 
 namespace AcaiaLogger
 {
     public sealed partial class MainPage : Page
     {
-        public List<LogEntry> BrewLog = new List<LogEntry>();
-
         private string LogFileName = "AcaiaLogger.csv";
+        private string LogFileHeader = "date,beanName,beanWeight,coffeeWeight,grind,time,notes,weightEverySec";
+
+        private WeightEverySec weightEverySec = new WeightEverySec();
+
+        public List<LogEntry> BrewLog { get; } = new List<LogEntry>();
+
+        private string ToCsvFile(string s) // make sure we do not save commas into csv, a quick hack
+        {
+            return s.Replace(",", " ") + ",";
+        }
 
         private async void BtnSaveLog_Click(object sender, RoutedEventArgs e)
         {
             StorageFolder storageFolder = ApplicationData.Current.RoamingFolder;
             StorageFile file = await storageFolder.CreateFileAsync(LogFileName, CreationCollisionOption.OpenIfExists);
 
+            // 
+            StringBuilder new_record = new StringBuilder();
 
+            new_record.Append(ToCsvFile(DetailDateTime.Text));
+            new_record.Append(ToCsvFile(DetailBeansName.Text));
+            new_record.Append(ToCsvFile(DetailBeansWeight.Text));
+            new_record.Append(ToCsvFile(DetailCoffeeWeight.Text));
+            new_record.Append(ToCsvFile(DetailGrind.Text));
+            new_record.Append(ToCsvFile(DetailTime.Text));
+            new_record.Append(ToCsvFile(DetailNotes.Text));
+            new_record.Append(weightEverySec.GetWeightsString());
 
+            //
+            var lines = await FileIO.ReadLinesAsync(file);
 
-            await FileIO.AppendTextAsync(file, "Example of writing a string\r\n");
+            List<string> new_lines = new List<string>();
+            new_lines.Add(LogFileHeader);
+            new_lines.Add(new_record.ToString());
+            for(int i = 1; i < lines.Count; i++)
+                new_lines.Add(lines[i]);
+
+            await FileIO.WriteLinesAsync(file, new_lines);
+
+            // update brewLog list
+            BrewLog.Insert(0, new LogEntry(new_record.ToString()));
+
+            // save to settings
+            ApplicationDataContainer localSettings = ApplicationData.Current.LocalSettings;
+            localSettings.Values["DetailBeansName"] = DetailBeansName.Text;
+            localSettings.Values["DetailGrind"] = DetailGrind.Text;
 
             NotifyUser("Saved to log " + file.Path, NotifyType.StatusMessage);
+
+            BtnSaveLog.IsEnabled = false;
         }
 
         private async void LoadLog()
@@ -39,12 +76,16 @@ namespace AcaiaLogger
             StorageFolder storageFolder = ApplicationData.Current.RoamingFolder;
             StorageFile file = await storageFolder.CreateFileAsync(LogFileName, CreationCollisionOption.OpenIfExists);
 
+            var lines = await FileIO.ReadLinesAsync(file);
 
+            BrewLog.Clear();
+            foreach(var line in lines)
+            {
+                if (line.StartsWith("date,beanName,beanWeight,")) // header line
+                    continue;
 
-
-            await FileIO.AppendTextAsync(file, "Example of writing a string\r\n");
-
-            NotifyUser("Saved to log " + file.Path, NotifyType.StatusMessage);
+                BrewLog.Add(new LogEntry(line));
+            }
         }
     }
 
@@ -57,7 +98,6 @@ namespace AcaiaLogger
         public string grind;
         public string time;
         public string notes;
-        public List<double> flow = new List<double>();
 
         public LogEntry(string csv_file_line)
         {
@@ -73,13 +113,113 @@ namespace AcaiaLogger
         }
     }
 
-    public class ScenarioBindingConverter : IValueConverter
+    public class WeightEverySec
+    {
+        List<double> weights = new List<double>();
+        DateTime startTime = DateTime.MinValue;
+        double sum = 0.0;
+        int num = 0;
+
+        public WeightEverySec()
+        {
+        }
+        public void Start()
+        {
+            weights.Clear();
+            weights.Add(0.0);
+            sum = 0.0;
+            num = 0;
+
+            startTime = DateTime.Now;
+        }
+        public void Stop()
+        {
+            startTime = DateTime.MinValue;
+
+            // prune the weights to remove constant values at the end
+            while(weights.Count > 2)
+            {
+                var last = weights.Count - 1;
+                if (Math.Abs(weights[last] - weights[last - 1]) < 0.15)
+                    weights.RemoveAt(last);
+                else
+                    break;
+            }
+        }
+
+        public string GetActualTimeingString()
+        {
+            return weights.Count.ToString();
+        }
+
+        public string GetWeightsString()
+        {
+            StringBuilder sb = new StringBuilder();
+
+            foreach (var w in weights)
+                sb.Append(w.ToString("0.0") + ";");
+
+            var str = sb.ToString();
+
+            return str.Substring(0, str.Length-1);
+        }
+
+        public bool NewReading(double w)
+        {
+            if (startTime == DateTime.MinValue)
+                return true;
+
+            var ts = DateTime.Now - startTime;
+            if (ts.TotalSeconds > weights.Count)
+            {
+                if (num <= 1)
+                    return false; // if no more reading values was accumulated over the previous second, i.e. something is wrong
+
+                weights.Add(sum / (double)num);
+                sum = 0.0;
+                num = 0;
+            }
+
+            sum += w;
+            num++;
+
+            return true;
+        }
+    }
+
+    public class LogEntryConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {
             LogEntry s = value as LogEntry;
-            return s.date + " " + s.beanWeight + " -> " + s.coffeeWeight +
-                " in " + s.time + " sec, grind " + s.grind + " " + s.beanName + " " + s.notes;
+            return  "\t" + s.date + " \t" + s.beanWeight + " -> " + s.coffeeWeight +
+                " in " + s.time + " sec \t  grind " + s.grind;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, string language)
+        {
+            return true;
+        }
+    }
+    public class LogNotesConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, string language)
+        {
+            LogEntry s = value as LogEntry;
+            return "\t" + s.notes;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, string language)
+        {
+            return true;
+        }
+    }
+    public class LogBeanNameConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, string language)
+        {
+            LogEntry s = value as LogEntry;
+            return s.beanName;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, string language)

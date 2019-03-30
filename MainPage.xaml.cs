@@ -42,7 +42,15 @@ namespace AcaiaLogger
             NotifyUser("", NotifyType.StatusMessage);
 
             ApplicationDataContainer localSettings = ApplicationData.Current.LocalSettings;
-            AcaiaDeviceId = localSettings.Values["AcaiaDeviceId"] as string;
+
+            var val = localSettings.Values["AcaiaDeviceId"] as string;
+            AcaiaDeviceId = val == null? "" : val;
+
+            val = localSettings.Values["DetailBeansName"] as string;
+            DetailBeansName.Text = val == null ? "" : val;
+
+            val = localSettings.Values["DetailGrind"] as string;
+            DetailGrind.Text = val == null ? "" : val;
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -53,7 +61,11 @@ namespace AcaiaLogger
             if (Window.Current.Bounds.Width < 640)
                 ScenarioControl.SelectedIndex = -1;
             else
-                ScenarioControl.SelectedIndex = 1;   // TEST
+                ScenarioControl.SelectedIndex = 0;
+
+            LoadLog();
+
+            ResultsListView.ItemsSource = BrewLog;
         }
 
         private void ScenarioControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -150,6 +162,7 @@ namespace AcaiaLogger
             }
         }
 
+        DateTime startTime = DateTime.MinValue;
         private void UpdateWeight(double weight_gramm)
         {
             LogBrewWeight.Text = weight_gramm == double.MinValue ? "---" : weight_gramm.ToString("0.0");
@@ -160,6 +173,20 @@ namespace AcaiaLogger
             {
                 peer.RaiseAutomationEvent(AutomationEvents.LiveRegionChanged);
             }
+
+            if (startTime != DateTime.MinValue)
+            {
+                LogBrewTime.Text = (DateTime.Now - startTime).TotalSeconds.ToString("0");
+
+                var peerT = FrameworkElementAutomationPeer.FromElement(LogBrewTime);
+                if (peerT != null)
+                {
+                    peerT.RaiseAutomationEvent(AutomationEvents.LiveRegionChanged);
+                }
+            }
+
+            if (!weightEverySec.NewReading(weight_gramm))
+                FatalError("Error: do not receive regular weight measurements from the scale");
         }
 
         private void MenuToggleButton_Click(object sender, RoutedEventArgs e)
@@ -422,8 +449,49 @@ namespace AcaiaLogger
         private void BtnTare_Click(object sender, RoutedEventArgs e)
         {
             WriteTare();
+            LogBrewTime.Text = "---";
         }
 
+        private void BtnBeansWeight_Click(object sender, RoutedEventArgs e)
+        {
+            DetailBeansWeight.Text = LogBrewWeight.Text;
+            NotifyUser("Bean weight saved", NotifyType.StatusMessage);
+        }
+
+        private void BtnStartLog_Click(object sender, RoutedEventArgs e)
+        {
+            BtnBeansWeight.IsEnabled = false;
+            BtnTare.IsEnabled = false;
+            BtnStartLog.IsEnabled = false;
+            BtnStopLog.IsEnabled = true;
+
+            startTime = DateTime.Now;
+            weightEverySec.Start();
+
+            NotifyUser("Started ...", NotifyType.StatusMessage);
+        }
+
+        private void BtnStopLog_Click(object sender, RoutedEventArgs e)
+        {
+            BtnBeansWeight.IsEnabled = true;
+            BtnTare.IsEnabled = true;
+            BtnStartLog.IsEnabled = true;
+            BtnStopLog.IsEnabled = false;
+
+            startTime = DateTime.MinValue;
+
+            weightEverySec.Stop();
+
+            DetailDateTime.Text = DateTime.Now.ToString("yyyy/dd/MM  HH:mm");
+            DetailCoffeeWeight.Text = LogBrewWeight.Text;
+            DetailTime.Text = weightEverySec.GetActualTimeingString();
+
+            // switch to brew details page
+            BtnSaveLog.IsEnabled = true;
+            ScenarioControl.SelectedIndex = 1;
+
+            NotifyUser("Stopped", NotifyType.StatusMessage);
+        }
     }
 
     public enum NotifyType { StatusMessage, ErrorMessage };

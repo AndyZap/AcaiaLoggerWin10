@@ -8,6 +8,12 @@
     x:Name="Main"
     mc:Ignorable="d">
 
+    <Page.Resources>
+        <local:LogEntryConverter x:Key="EntryConverter"></local:LogEntryConverter>
+        <local:LogNotesConverter x:Key="NotesConverter"></local:LogNotesConverter>
+        <local:LogBeanNameConverter x:Key="BeanNameConverter"></local:LogBeanNameConverter>
+    </Page.Resources>
+
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -52,10 +58,10 @@
 
                         <TextBlock Text="Log a brew"  Margin="0,30,0,10" Style="{StaticResource SampleHeaderTextStyle}"/>
                         <StackPanel Margin="0,10,0,0" Orientation="Horizontal">
-                            <Button x:Name="BtnBeansWeight" Content="Beans Weight" Margin="0,10,10,10" IsEnabled="False" FontSize="24"/>
+                            <Button x:Name="BtnBeansWeight" Content="Beans Weight" Margin="0,10,10,10" IsEnabled="False" FontSize="24" Click="BtnBeansWeight_Click"/>
                             <Button x:Name="BtnTare" Content="Tare" Margin="30,10,10,10" IsEnabled="False" FontSize="24" Click="BtnTare_Click" />
-                            <Button x:Name="BtnStartLog" Content="Start" Margin="30,10,10,10" IsEnabled="False" FontSize="24"/>
-                            <Button x:Name="BtnStopLog" Content="Stop" Margin="30,10,10,10" IsEnabled="False" FontSize="24" />
+                            <Button x:Name="BtnStartLog" Content="Start" Margin="30,10,10,10" IsEnabled="False" FontSize="24" Click="BtnStartLog_Click"/>
+                            <Button x:Name="BtnStopLog" Content="Stop" Margin="30,10,10,10" IsEnabled="False" FontSize="24" Click="BtnStopLog_Click" />
                         </StackPanel>
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -80,7 +86,7 @@
                     <StackPanel  x:Name="PanelBrewDetails" Grid.Row="1" Margin="0,0,0,10">
                         <TextBlock Text="Brew Details" Style="{StaticResource SampleHeaderTextStyle}"/>
                         <StackPanel Margin="0,10,0,0" Orientation="Horizontal">
-                            <Button x:Name="BtnSaveLog" Content="Save" Margin="0,10,10,10" IsEnabled="True" FontSize="24" Click="BtnSaveLog_Click" />
+                            <Button x:Name="BtnSaveLog" Content="Save" Margin="0,10,10,10" IsEnabled="False" FontSize="24" Click="BtnSaveLog_Click" />
                         </StackPanel>
 
                         <Grid >
@@ -107,12 +113,12 @@
                             <TextBlock Grid.Row="5" Grid.Column="0" Text="Grind"  Margin="0,10,10,10" FontSize="24"/>
                             <TextBlock Grid.Row="6" Grid.Column="0" Text="Notes"  Margin="0,10,10,10" FontSize="24"/>
 
-                            <TextBlock Grid.Row="0" Grid.Column="1" x:Name="DetailDateTime" Text="-"  Margin="30,10,10,10" FontSize="24"/>
-                            <TextBox Grid.Row="1" Grid.Column="1" x:Name="DetailBeansName" HorizontalAlignment="Left" Margin="20,10,10,10" Text="" FontSize="24" Height="auto" Width ="auto"/>
-                            <TextBox Grid.Row="2" Grid.Column="1" x:Name="DetailBeansWeight" HorizontalAlignment="Left" Margin="20,10,10,10" Text="" FontSize="24" Height="auto" Width ="auto"/>
-                            <TextBox Grid.Row="3" Grid.Column="1" x:Name="DetailCoffeeWeight" HorizontalAlignment="Left" Margin="20,10,10,10" Text="" FontSize="24" Height="auto" Width ="auto"/>
-                            <TextBox Grid.Row="4" Grid.Column="1" x:Name="DetailTime" HorizontalAlignment="Left" Margin="20,10,10,10" Text="" FontSize="24" Height="auto" Width ="auto"/>
-                            <TextBox Grid.Row="5" Grid.Column="1" x:Name="DetailGrind" HorizontalAlignment="Left" Margin="20,10,10,10" Text="" FontSize="24" Height="auto" Width ="auto"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1" x:Name="DetailDateTime" Text="---"  Margin="30,10,10,10" FontSize="24"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" x:Name="DetailBeansName" HorizontalAlignment="Left" Margin="20,10,10,10" Text="-" FontSize="24" Height="auto" Width ="auto"/>
+                            <TextBox Grid.Row="2" Grid.Column="1" x:Name="DetailBeansWeight" HorizontalAlignment="Left" Margin="20,10,10,10" Text="-" FontSize="24" Height="auto" Width ="auto"/>
+                            <TextBox Grid.Row="3" Grid.Column="1" x:Name="DetailCoffeeWeight" HorizontalAlignment="Left" Margin="20,10,10,10" Text="-" FontSize="24" Height="auto" Width ="auto"/>
+                            <TextBox Grid.Row="4" Grid.Column="1" x:Name="DetailTime" HorizontalAlignment="Left" Margin="20,10,10,10" Text="-" FontSize="24" Height="auto" Width ="auto"/>
+                            <TextBox Grid.Row="5" Grid.Column="1" x:Name="DetailGrind" HorizontalAlignment="Left" Margin="20,10,10,10" Text="-" FontSize="24" Height="auto" Width ="auto"/>
                             <TextBox Grid.Row="6" Grid.Column="1" x:Name="DetailNotes" HorizontalAlignment="Left" Margin="20,10,10,10" Text="" FontSize="24" Height="auto" Width ="auto" TextWrapping="Wrap"/>
                         </Grid>
                     </StackPanel>
@@ -123,8 +129,20 @@
 
                     <ScrollViewer x:Name="ScrollViewerBrewList" VerticalScrollMode="Auto" VerticalScrollBarVisibility="Auto" Grid.Row="2" Margin="0,10,0,0"
                       BorderBrush="AntiqueWhite" BorderThickness="1" Visibility="Collapsed">
-                        <ListView x:Name="ResultsListView" />
-                        <!-- ItemTemplate="{StaticResource ResultsListViewTemplate}" ItemsSource="{x:Bind KnownDevices, Mode=OneWay}" -->
+
+                        <ListBox x:Name="ResultsListView" AutomationProperties.Name="BrewLog"
+                            SelectionMode="Single" HorizontalAlignment="Left" Background="Transparent" BorderThickness="0" VerticalAlignment="Top" Margin="0,10,0,0">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel x:Name="StatusPanel" Orientation="Vertical">
+                                        <TextBlock Text="{Binding Converter={StaticResource BeanNameConverter}}" FontSize="28" TextWrapping="Wrap"/>
+                                        <TextBlock Text="{Binding Converter={StaticResource EntryConverter}}" FontSize="24" TextWrapping="Wrap"/>
+                                        <TextBlock Text="{Binding Converter={StaticResource NotesConverter}}" FontSize="18" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
                     </ScrollViewer>
 
                 </Grid>
