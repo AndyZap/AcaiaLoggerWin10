@@ -13,6 +13,7 @@ using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using Windows.Devices.Enumeration;
 using Windows.Security.Cryptography;
 using System.Text;
+using System.Collections.ObjectModel;
 
 namespace AcaiaLogger
 {
@@ -23,11 +24,24 @@ namespace AcaiaLogger
 
         private WeightEverySec weightEverySec = new WeightEverySec();
 
-        public List<LogEntry> BrewLog { get; } = new List<LogEntry>();
+        public ObservableCollection<LogEntry> BrewLog { get; } = new ObservableCollection<LogEntry>();
 
         private string ToCsvFile(string s) // make sure we do not save commas into csv, a quick hack
         {
             return s.Replace(",", " ") + ",";
+        }
+
+        private string GetRatioString()
+        {
+            try
+            {
+                var ratio = Convert.ToDouble(DetailCoffeeWeight.Text) / Convert.ToDouble(DetailBeansWeight.Text);
+                return "ratio " + ratio.ToString("0.0");
+            }
+            catch (Exception)
+            {
+                return "-";
+            }
         }
 
         private async void BtnSaveLog_Click(object sender, RoutedEventArgs e)
@@ -192,8 +206,18 @@ namespace AcaiaLogger
         public object Convert(object value, Type targetType, object parameter, string language)
         {
             LogEntry s = value as LogEntry;
-            return  "\t" + s.date + " \t" + s.beanWeight + " -> " + s.coffeeWeight +
-                " in " + s.time + " sec \t  grind " + s.grind;
+
+            string ratio_string = "";
+            try
+            {
+                var ratio = System.Convert.ToDouble(s.coffeeWeight) / System.Convert.ToDouble(s.beanWeight);
+                ratio_string = ratio.ToString("0.0");
+            }
+            catch (Exception) { }
+
+
+            return  "\t" + s.date.Substring(5) + " \t" + s.beanWeight + " -> " + s.coffeeWeight +
+                " in " + s.time + " sec  ratio " + ratio_string + "\t  grind " + s.grind;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, string language)

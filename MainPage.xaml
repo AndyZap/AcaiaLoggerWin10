@@ -14,7 +14,7 @@
         <local:LogBeanNameConverter x:Key="BeanNameConverter"></local:LogBeanNameConverter>
     </Page.Resources>
 
-    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" KeyDown="Grid_KeyDown">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -116,9 +116,16 @@
                             <TextBlock Grid.Row="0" Grid.Column="1" x:Name="DetailDateTime" Text="---"  Margin="30,10,10,10" FontSize="24"/>
                             <TextBox Grid.Row="1" Grid.Column="1" x:Name="DetailBeansName" HorizontalAlignment="Left" Margin="20,10,10,10" Text="-" FontSize="24" Height="auto" Width ="auto"/>
                             <TextBox Grid.Row="2" Grid.Column="1" x:Name="DetailBeansWeight" HorizontalAlignment="Left" Margin="20,10,10,10" Text="-" FontSize="24" Height="auto" Width ="auto"/>
-                            <TextBox Grid.Row="3" Grid.Column="1" x:Name="DetailCoffeeWeight" HorizontalAlignment="Left" Margin="20,10,10,10" Text="-" FontSize="24" Height="auto" Width ="auto"/>
+                            <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal">
+                                <TextBox x:Name="DetailCoffeeWeight" HorizontalAlignment="Left" Margin="20,10,10,10" Text="-" FontSize="24" Height="auto" Width ="auto"/>
+                                <TextBlock x:Name="DetailCoffeeRatio" Text="-"  Margin="10,10,10,10" FontSize="24"/>
+                            </StackPanel>
                             <TextBox Grid.Row="4" Grid.Column="1" x:Name="DetailTime" HorizontalAlignment="Left" Margin="20,10,10,10" Text="-" FontSize="24" Height="auto" Width ="auto"/>
-                            <TextBox Grid.Row="5" Grid.Column="1" x:Name="DetailGrind" HorizontalAlignment="Left" Margin="20,10,10,10" Text="-" FontSize="24" Height="auto" Width ="auto"/>
+                            <StackPanel Grid.Row="5" Grid.Column="1" Orientation="Horizontal">
+                                <TextBox  x:Name="DetailGrind" HorizontalAlignment="Left" Margin="20,10,10,10" Text="4" FontSize="24" Height="auto" Width ="auto"/>
+                                <Button x:Name="BtnGrindMinus" Content="-" Margin="0,10,10,10" FontSize="24" Click="BtnGrindMinus_Click" />
+                                <Button x:Name="BtnGrindPlus" Content="+" Margin="0,10,0,10"  FontSize="24" Click="BtnGrindPlus_Click" />
+                            </StackPanel>
                             <TextBox Grid.Row="6" Grid.Column="1" x:Name="DetailNotes" HorizontalAlignment="Left" Margin="20,10,10,10" Text="" FontSize="24" Height="auto" Width ="auto" TextWrapping="Wrap"/>
                         </Grid>
                     </StackPanel>

@@ -12,6 +12,9 @@ using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using Windows.Devices.Enumeration;
 using Windows.Security.Cryptography;
+using Windows.UI.Xaml.Input;
+using Windows.System;
+using Windows.UI.Popups;
 
 namespace AcaiaLogger
 {
@@ -482,15 +485,115 @@ namespace AcaiaLogger
 
             weightEverySec.Stop();
 
-            DetailDateTime.Text = DateTime.Now.ToString("yyyy/dd/MM  HH:mm");
+            DetailDateTime.Text = DateTime.Now.ToString("yyyy MMM dd ddd HH:mm");
             DetailCoffeeWeight.Text = LogBrewWeight.Text;
             DetailTime.Text = weightEverySec.GetActualTimeingString();
+            DetailCoffeeRatio.Text = GetRatioString();
 
             // switch to brew details page
             BtnSaveLog.IsEnabled = true;
             ScenarioControl.SelectedIndex = 1;
 
             NotifyUser("Stopped", NotifyType.StatusMessage);
+        }
+
+        private static bool IsCtrlKeyPressed()
+        {
+            var ctrlState = CoreWindow.GetForCurrentThread().GetKeyState(VirtualKey.Control);
+            return (ctrlState & CoreVirtualKeyStates.Down) == CoreVirtualKeyStates.Down;
+        }
+
+        private async void Grid_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            string help_message = "Shortcuts\r\nF1\tHelp\r\nCtrl-C\tConnect / Disconnect\r\n";
+            help_message += "Ctrl-B\tBeans weight\r\nCtrl-T\tTare\r\nCtrl-S\tStart / Stop\r\n";
+            help_message += "Ctrl-Up\tGrind +\r\nCtrl-Dn\tGrind -\r\n\r\nF12\tSave\r\n";
+            help_message += "Ctrl-1\tMenu item 1, etc";
+
+            if (IsCtrlKeyPressed())
+            {
+                switch (e.Key)
+                {
+                    case VirtualKey.C:
+                        if (BtnConnect.IsEnabled)
+                            BtnConnect_Click(null, null);
+                        else
+                            BtnDisconnect_Click(null, null);
+                        break;
+
+                    case VirtualKey.B:
+                        if (BtnBeansWeight.IsEnabled)
+                            BtnBeansWeight_Click(null, null);
+                        break;
+
+                    case VirtualKey.T:
+                        if (BtnTare.IsEnabled)
+                            BtnTare_Click(null, null);
+                        break;
+
+                    case VirtualKey.S:
+                        if (BtnStartLog.IsEnabled)
+                            BtnStartLog_Click(null, null);
+                        else if (BtnStopLog.IsEnabled)
+                            BtnStopLog_Click(null, null);
+                        break;
+
+                    case VirtualKey.Down:
+                        BtnGrindMinus_Click(null, null);
+                        break;
+                    case VirtualKey.Up:
+                        BtnGrindPlus_Click(null, null);
+                        break;
+
+
+                    case VirtualKey.Number1:
+                        ScenarioControl.SelectedIndex = 0;
+                        break;
+                    case VirtualKey.Number2:
+                        ScenarioControl.SelectedIndex = 1;
+                        break;
+                    case VirtualKey.Number3:
+                        ScenarioControl.SelectedIndex = 2;
+                        break;
+                }
+            }
+            else
+            {
+                switch (e.Key)
+                {
+                    case VirtualKey.F1:
+                        var messageDialog = new MessageDialog(help_message);
+                        await messageDialog.ShowAsync();
+                        break;
+
+                    case VirtualKey.F12:
+                        if (BtnSaveLog.IsEnabled)
+                            BtnSaveLog_Click(null, null);
+                        break;
+                }
+            }
+        }
+
+        private void BtnGrindMinus_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var grind = Convert.ToDouble(DetailGrind.Text);
+                grind -= 0.25;
+                DetailGrind.Text = grind.ToString("0.00");
+            }
+            catch (Exception) { }
+        }
+
+        private void BtnGrindPlus_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var grind = Convert.ToDouble(DetailGrind.Text);
+                grind += 0.25;
+                DetailGrind.Text = grind.ToString("0.00");
+            }
+            catch (Exception) { }
         }
     }
 
