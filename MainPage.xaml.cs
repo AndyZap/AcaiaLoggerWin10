@@ -179,7 +179,12 @@ namespace AcaiaLogger
 
             if (startTime != DateTime.MinValue)
             {
-                LogBrewTime.Text = (DateTime.Now - startTime).TotalSeconds.ToString("0");
+                var tspan = (DateTime.Now - startTime);
+
+                if (tspan.TotalSeconds >= 60)
+                    LogBrewTime.Text = tspan.Minutes.ToString("0") + ":" + tspan.Seconds.ToString("00");
+                else
+                    LogBrewTime.Text = tspan.Seconds.ToString("0");
 
                 var peerT = FrameworkElementAutomationPeer.FromElement(LogBrewTime);
                 if (peerT != null)
@@ -419,9 +424,6 @@ namespace AcaiaLogger
 
             appStatus = AppStatusEnum.Disconnected;
 
-            // LogBrewTime.Text = "---"; TODO!
-            //NotifyWeight(double.MinValue);
-
             LogBrewWeight.Text = "---";
             LogBrewTime.Text = "---";
         }
@@ -507,7 +509,7 @@ namespace AcaiaLogger
         {
             string help_message = "Shortcuts\r\nF1\tHelp\r\nCtrl-C\tConnect / Disconnect\r\n";
             help_message += "Ctrl-B\tBeans weight\r\nCtrl-T\tTare\r\nCtrl-S\tStart / Stop\r\n";
-            help_message += "Ctrl-Up\tGrind +\r\nCtrl-Dn\tGrind -\r\n\r\nF12\tSave\r\n";
+            help_message += "Ctrl-Up\tGrind +\r\nCtrl-Dn\tGrind -\r\n\r\nCtrl-A\tAdd to log\r\n";
             help_message += "Ctrl-1\tMenu item 1, etc";
 
             if (IsCtrlKeyPressed())
@@ -545,6 +547,10 @@ namespace AcaiaLogger
                         BtnGrindPlus_Click(null, null);
                         break;
 
+                    case VirtualKey.A:
+                        if (BtnSaveLog.IsEnabled)
+                            BtnSaveLog_Click(null, null);
+                        break;
 
                     case VirtualKey.Number1:
                         ScenarioControl.SelectedIndex = 0;
@@ -564,11 +570,6 @@ namespace AcaiaLogger
                     case VirtualKey.F1:
                         var messageDialog = new MessageDialog(help_message);
                         await messageDialog.ShowAsync();
-                        break;
-
-                    case VirtualKey.F12:
-                        if (BtnSaveLog.IsEnabled)
-                            BtnSaveLog_Click(null, null);
                         break;
                 }
             }

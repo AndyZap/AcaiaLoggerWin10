@@ -86,7 +86,7 @@
                     <StackPanel  x:Name="PanelBrewDetails" Grid.Row="1" Margin="0,0,0,10">
                         <TextBlock Text="Brew Details" Style="{StaticResource SampleHeaderTextStyle}"/>
                         <StackPanel Margin="0,10,0,0" Orientation="Horizontal">
-                            <Button x:Name="BtnSaveLog" Content="Save" Margin="0,10,10,10" IsEnabled="False" FontSize="24" Click="BtnSaveLog_Click" />
+                            <Button x:Name="BtnSaveLog" Content="Add to log" Margin="0,10,10,10" IsEnabled="False" FontSize="24" Click="BtnSaveLog_Click" />
                         </StackPanel>
 
                         <Grid >
@@ -141,7 +141,7 @@
                             SelectionMode="Single" HorizontalAlignment="Left" Background="Transparent" BorderThickness="0" VerticalAlignment="Top" Margin="0,10,0,0">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
-                                    <StackPanel x:Name="StatusPanel" Orientation="Vertical">
+                                    <StackPanel Orientation="Vertical">
                                         <TextBlock Text="{Binding Converter={StaticResource BeanNameConverter}}" FontSize="28" TextWrapping="Wrap"/>
                                         <TextBlock Text="{Binding Converter={StaticResource EntryConverter}}" FontSize="24" TextWrapping="Wrap"/>
                                         <TextBlock Text="{Binding Converter={StaticResource NotesConverter}}" FontSize="18" TextWrapping="Wrap"/>
@@ -159,12 +159,12 @@
                 -->
 
                 <StackPanel x:Name="StatusPanel" Orientation="Vertical" RelativePanel.AlignBottomWithPanel="True" RelativePanel.AlignRightWithPanel="True" RelativePanel.AlignLeftWithPanel="True">
-                    <TextBlock x:Name="StatusLabel" Margin="10,0,0,10" TextWrapping="Wrap" Text="Status:" />
+                    <TextBlock x:Name="StatusLabel" Margin="10,0,0,10" TextWrapping="Wrap" Text="Status:" FontSize="24" />
                     <Border x:Name="StatusBorder" Margin="0,0,0,0">
                         <ScrollViewer VerticalScrollMode="Auto"  VerticalScrollBarVisibility="Auto" MaxHeight="200">
                             <!-- Use LiveSetting to enable screen readers to announce the status update. -->
                             <TextBlock x:Name="StatusBlock" FontWeight="Bold" AutomationProperties.LiveSetting="Assertive"
-                                   MaxWidth="{Binding ElementName=Splitter, Path=ActualWidth}" Margin="10,10,10,20" TextWrapping="Wrap"  />
+                                   MaxWidth="{Binding ElementName=Splitter, Path=ActualWidth}" Margin="10,10,10,20" TextWrapping="Wrap" FontSize="24" />
                         </ScrollViewer>
                     </Border>
                 </StackPanel>

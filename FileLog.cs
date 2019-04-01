@@ -24,6 +24,8 @@ namespace AcaiaLogger
 
         private WeightEverySec weightEverySec = new WeightEverySec();
 
+        private readonly int __MaxRecordsToSave = 50;  // keep the last 50 records only
+
         public ObservableCollection<LogEntry> BrewLog { get; } = new ObservableCollection<LogEntry>();
 
         private string ToCsvFile(string s) // make sure we do not save commas into csv, a quick hack
@@ -36,7 +38,7 @@ namespace AcaiaLogger
             try
             {
                 var ratio = Convert.ToDouble(DetailCoffeeWeight.Text) / Convert.ToDouble(DetailBeansWeight.Text);
-                return "ratio " + ratio.ToString("0.0");
+                return "ratio " + ratio.ToString("0.00");
             }
             catch (Exception)
             {
@@ -67,7 +69,7 @@ namespace AcaiaLogger
             List<string> new_lines = new List<string>();
             new_lines.Add(LogFileHeader);
             new_lines.Add(new_record.ToString());
-            for(int i = 1; i < lines.Count; i++)
+            for(int i = 1; i < Math.Min(__MaxRecordsToSave, lines.Count); i++)
                 new_lines.Add(lines[i]);
 
             await FileIO.WriteLinesAsync(file, new_lines);
@@ -211,7 +213,7 @@ namespace AcaiaLogger
             try
             {
                 var ratio = System.Convert.ToDouble(s.coffeeWeight) / System.Convert.ToDouble(s.beanWeight);
-                ratio_string = ratio.ToString("0.0");
+                ratio_string = ratio.ToString("0.00");
             }
             catch (Exception) { }
 
