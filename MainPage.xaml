@@ -19,7 +19,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <SplitView x:Name="Splitter" IsPaneOpen="True" Grid.Column="1" DisplayMode="Inline" Grid.Row="1">
+        <SplitView x:Name="Splitter" IsPaneOpen="False" Grid.Column="1" DisplayMode="Inline" Grid.Row="1">
             <SplitView.Pane>
                 <StackPanel x:Name="PanePanel" Orientation="Vertical" >
                     <!-- Provide an AutomationProperties.Name for a list to a screen reader. A shipping app would localize this. -->

@@ -455,6 +455,7 @@ namespace AcaiaLogger
         {
             WriteTare();
             LogBrewTime.Text = "---";
+            NotifyUser("Tare", NotifyType.StatusMessage);
         }
 
         private void BtnBeansWeight_Click(object sender, RoutedEventArgs e)
@@ -507,7 +508,7 @@ namespace AcaiaLogger
 
         private async void Grid_KeyDown(object sender, KeyRoutedEventArgs e)
         {
-            string help_message = "Shortcuts\r\nF1\tHelp\r\nCtrl-C\tConnect / Disconnect\r\n";
+            string help_message = "Shortcuts\r\nF1\tHelp\r\nCtrl-C\tConnect\r\nCtrl-D\tDisconnect\r\n";
             help_message += "Ctrl-B\tBeans weight\r\nCtrl-T\tTare\r\nCtrl-S\tStart / Stop\r\n";
             help_message += "Ctrl-Up\tGrind +\r\nCtrl-Dn\tGrind -\r\n\r\nCtrl-A\tAdd to log\r\n";
             help_message += "Ctrl-1\tMenu item 1, etc";
@@ -519,7 +520,10 @@ namespace AcaiaLogger
                     case VirtualKey.C:
                         if (BtnConnect.IsEnabled)
                             BtnConnect_Click(null, null);
-                        else
+                        break;
+
+                    case VirtualKey.D:
+                        if (BtnDisconnect.IsEnabled)
                             BtnDisconnect_Click(null, null);
                         break;
 
@@ -562,6 +566,10 @@ namespace AcaiaLogger
                         ScenarioControl.SelectedIndex = 2;
                         break;
                 }
+
+                // StatusLabel.Text = DateTime.Now.ToString("mm:ss") + " -- " + e.Key.ToString(); // enable to check if app received key events
+                if (Splitter.FocusState == FocusState.Unfocused)
+                    Splitter.Focus(FocusState.Keyboard);
             }
             else
             {
