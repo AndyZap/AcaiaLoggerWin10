@@ -1,13 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using Windows.Devices.Bluetooth;
 using Windows.Devices.Enumeration;
 using Windows.UI.Core;
-using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Navigation;
 
 namespace AcaiaLogger
 {
@@ -143,7 +138,7 @@ namespace AcaiaLogger
             {
                 // Protect against race condition if the task runs after the app stopped the deviceWatcher.
                 if (sender == deviceWatcher)
-                    FatalError("Error: did not find an Acaia scale, enumeration completed. Make sure that the Bluetooth adapter and your scale are ON");
+                    FatalError("Error: did not find the required devices, enumeration completed. Make sure that the Bluetooth adapter and your devices are ON");
             });
         }
 
@@ -154,7 +149,7 @@ namespace AcaiaLogger
             {
                 // Protect against race condition if the task runs after the app stopped the deviceWatcher.
                 if (sender == deviceWatcher)
-                    FatalError("Error: did not find an Acaia scale, enumeration stopped. Make sure that the Bluetooth adapter and your scale are ON");
+                    FatalError("Error: did not find the required devices, enumeration stopped. Make sure that the Bluetooth adapter and your devices are ON");
             });
         }
     }

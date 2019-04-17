@@ -5,7 +5,6 @@ using Windows.UI.Core;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Automation.Peers;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Data;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 using Windows.Devices.Bluetooth;
@@ -24,15 +23,15 @@ namespace AcaiaLogger
 
         private BluetoothCacheMode bluetoothCacheMode = BluetoothCacheMode.Cached;
 
-        private BluetoothLEDevice bluetoothLeDevice = null;
-        private GattCharacteristic selectedCharacteristic = null;
+        private BluetoothLEDevice bluetoothDeviceScale = null;
+        private GattCharacteristic selectedCharacteristicScale = null;
 
         private DispatcherTimer heartBeatTimer;
 
-        private enum AppStatusEnum { Disconnected, ScaleDiscovered, ScalePaired, CharacteristicConnected }
+        private enum AppStatusEnum { Disconnected, ScaleDiscovered, CharacteristicConnected }
 
         private AppStatusEnum appStatus = AppStatusEnum.Disconnected;
-        private bool subscribedForNotifications = false;
+        private bool subscribedForNotificationsScale = false;
 
         public MainPage()
         {
@@ -165,7 +164,7 @@ namespace AcaiaLogger
             }
         }
 
-        DateTime startTime = DateTime.MinValue;
+        DateTime startTimeWeight = DateTime.MinValue;
         private void UpdateWeight(double weight_gramm)
         {
             LogBrewWeight.Text = weight_gramm == double.MinValue ? "---" : weight_gramm.ToString("0.0");
@@ -177,9 +176,9 @@ namespace AcaiaLogger
                 peer.RaiseAutomationEvent(AutomationEvents.LiveRegionChanged);
             }
 
-            if (startTime != DateTime.MinValue)
+            if (startTimeWeight != DateTime.MinValue)
             {
-                var tspan = (DateTime.Now - startTime);
+                var tspan = (DateTime.Now - startTimeWeight);
 
                 if (tspan.TotalSeconds >= 60)
                     LogBrewTime.Text = tspan.Minutes.ToString("0") + ":" + tspan.Seconds.ToString("00");
@@ -213,12 +212,12 @@ namespace AcaiaLogger
             {
                 try
                 {
-                    bluetoothLeDevice = await BluetoothLEDevice.FromIdAsync(AcaiaDeviceId);
+                    bluetoothDeviceScale = await BluetoothLEDevice.FromIdAsync(AcaiaDeviceId);
                 }
                 catch (Exception) { }
             }
             
-            if (bluetoothLeDevice == null) // Failed to connect with the device ID, need to search for the scale
+            if (bluetoothDeviceScale == null) // Failed to connect with the device ID, need to search for the scale
             {
                 if (deviceWatcher == null)
                     StartBleDeviceWatcher();
@@ -227,7 +226,7 @@ namespace AcaiaLogger
             }
             else // we have bluetoothLeDevice, connect to the characteristic
             {
-                appStatus = AppStatusEnum.ScalePaired;
+                appStatus = AppStatusEnum.ScaleDiscovered;
             }
             heartBeatTimer.Start();
         }
@@ -257,51 +256,26 @@ namespace AcaiaLogger
             }
             else if (appStatus == AppStatusEnum.ScaleDiscovered)
             {
-                var deviceInfo = FindDeviceById(AcaiaDeviceId);
-
-                if (!deviceInfo.Pairing.IsPaired)
-                {
-                    NotifyUser("Pairing started. Please wait...", NotifyType.StatusMessage);
-
-                    // BT_Code: Pair the currently selected device.
-                    DevicePairingResult result = await deviceInfo.Pairing.PairAsync();
-
-                    bool is_paired = result.Status == DevicePairingResultStatus.Paired || result.Status == DevicePairingResultStatus.AlreadyPaired;
-
-                    NotifyUser(is_paired ? "Paired Acaia scale" : "Failed to pair Acaia scale", is_paired ? NotifyType.StatusMessage : NotifyType.ErrorMessage);
-
-                    if (!is_paired)
-                    {
-                        Disconnect();
-                        return;
-                    }
-                }
-
-                appStatus = AppStatusEnum.ScalePaired;
-                heartBeatTimer.Start();
-            }
-            else if (appStatus == AppStatusEnum.ScalePaired)
-            {
                 NotifyUser("Enabling weight measurements ...", NotifyType.StatusMessage);
 
                 try
                 {
-                    if (bluetoothLeDevice == null)
+                    if (bluetoothDeviceScale == null)
                     {
                         try
                         {
-                            bluetoothLeDevice = await BluetoothLEDevice.FromIdAsync(AcaiaDeviceId);
+                            bluetoothDeviceScale = await BluetoothLEDevice.FromIdAsync(AcaiaDeviceId);
                         }
                         catch (Exception) { }
                     }
 
-                    if (bluetoothLeDevice == null)
+                    if (bluetoothDeviceScale == null)
                     {
                         FatalError("Failed to create BluetoothLEDevice");
                         return;
                     }
 
-                    GattDeviceServicesResult result_service = await bluetoothLeDevice.GetGattServicesForUuidAsync(
+                    GattDeviceServicesResult result_service = await bluetoothDeviceScale.GetGattServicesForUuidAsync(
                     new Guid(ScaleServiceGuid), bluetoothCacheMode);
 
                     if (result_service.Status != GattCommunicationStatus.Success)
@@ -344,27 +318,13 @@ namespace AcaiaLogger
                         return;
                     }
 
-                    selectedCharacteristic = result_charact.Characteristics[0];
+                    selectedCharacteristicScale = result_charact.Characteristics[0];
 
-                    /*
-                    var result_descr = await selectedCharacteristic.GetDescriptorsAsync(bluetoothCacheMode);
-                    if (result_descr.Status != GattCommunicationStatus.Success)
-                    {
-                        FatalError("Failed to get Scale service characteristics descriptor" + result_descr.Status.ToString());
-                        return;
-                    }
-
-                    foreach (var descr in result_descr.Descriptors) // TODO one description which we can read to check if the notificaiont are enabled
-                    {
-                        Log("Descriptor: " + descr.Uuid.ToString());
-                    }*/
-
-
-                    selectedCharacteristic.ValueChanged += Characteristic_ValueChanged;
+                    selectedCharacteristicScale.ValueChanged += CharacteristicScale_ValueChanged;
 
                     // enable notifications
-                    var result = await selectedCharacteristic.WriteClientCharacteristicConfigurationDescriptorAsync(GattClientCharacteristicConfigurationDescriptorValue.Notify);
-                    subscribedForNotifications = true;
+                    var result = await selectedCharacteristicScale.WriteClientCharacteristicConfigurationDescriptorAsync(GattClientCharacteristicConfigurationDescriptorValue.Notify);
+                    subscribedForNotificationsScale = true;
 
                     WriteAppIdentity(); // in order to start receiving weights
 
@@ -399,20 +359,20 @@ namespace AcaiaLogger
 
             StopBleDeviceWatcher();
 
-            if (subscribedForNotifications)
+            if (subscribedForNotificationsScale)
             {
                 // Need to clear the CCCD from the remote device so we stop receiving notifications
-                var result = await selectedCharacteristic.WriteClientCharacteristicConfigurationDescriptorAsync(GattClientCharacteristicConfigurationDescriptorValue.None);
+                var result = await selectedCharacteristicScale.WriteClientCharacteristicConfigurationDescriptorAsync(GattClientCharacteristicConfigurationDescriptorValue.None);
 
                 //if (result != GattCommunicationStatus.Success)
                 //    Log("Was not able to disable notifications");
 
-                selectedCharacteristic.ValueChanged -= Characteristic_ValueChanged;
+                selectedCharacteristicScale.ValueChanged -= CharacteristicScale_ValueChanged;
 
-                subscribedForNotifications = false;
+                subscribedForNotificationsScale = false;
             }
-            bluetoothLeDevice?.Dispose();
-            bluetoothLeDevice = null;
+            bluetoothDeviceScale?.Dispose();
+            bluetoothDeviceScale = null;
 
             BtnConnect.IsEnabled = true;
             BtnDisconnect.IsEnabled = false;
@@ -428,7 +388,7 @@ namespace AcaiaLogger
             LogBrewTime.Text = "---";
         }
 
-        private void Characteristic_ValueChanged(GattCharacteristic sender, GattValueChangedEventArgs args)
+        private void CharacteristicScale_ValueChanged(GattCharacteristic sender, GattValueChangedEventArgs args)
         {
             byte[] data;
             CryptographicBuffer.CopyToByteArray(args.CharacteristicValue, out data);
@@ -471,7 +431,7 @@ namespace AcaiaLogger
             BtnStartLog.IsEnabled = false;
             BtnStopLog.IsEnabled = true;
 
-            startTime = DateTime.Now;
+            startTimeWeight = DateTime.Now;
             weightEverySec.Start();
 
             NotifyUser("Started ...", NotifyType.StatusMessage);
@@ -484,13 +444,13 @@ namespace AcaiaLogger
             BtnStartLog.IsEnabled = true;
             BtnStopLog.IsEnabled = false;
 
-            startTime = DateTime.MinValue;
+            startTimeWeight = DateTime.MinValue;
 
             weightEverySec.Stop();
 
             DetailDateTime.Text = DateTime.Now.ToString("yyyy MMM dd ddd HH:mm");
             DetailCoffeeWeight.Text = LogBrewWeight.Text;
-            DetailTime.Text = weightEverySec.GetActualTimeingString();
+            DetailTime.Text = weightEverySec.GetActualTimingString();
             DetailCoffeeRatio.Text = GetRatioString();
 
             // switch to brew details page

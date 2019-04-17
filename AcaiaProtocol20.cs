@@ -1,14 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using Windows.Devices.Bluetooth;
-using Windows.Devices.Enumeration;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
-using Windows.UI.Core;
-using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Navigation;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Linq;
 
@@ -45,7 +37,7 @@ namespace AcaiaLogger
             try
             {
                 // BT_Code: Writes the value from the buffer to the characteristic.
-                var result = await selectedCharacteristic.WriteValueWithResultAsync(payload.AsBuffer());
+                var result = await selectedCharacteristicScale.WriteValueWithResultAsync(payload.AsBuffer());
 
                 if (result.Status != GattCommunicationStatus.Success)
                     FatalError("Failed to write to scale characteristic");

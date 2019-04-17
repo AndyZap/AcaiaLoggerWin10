@@ -1,28 +1,21 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Text;
 using Windows.Storage;
-using Windows.UI.Core;
 using Windows.UI.Xaml;
-using Windows.UI.Xaml.Automation.Peers;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Data;
-using Windows.UI.Xaml.Media;
-using Windows.UI.Xaml.Navigation;
-using Windows.Devices.Bluetooth;
-using Windows.Devices.Bluetooth.GenericAttributeProfile;
-using Windows.Devices.Enumeration;
-using Windows.Security.Cryptography;
-using System.Text;
-using System.Collections.ObjectModel;
+
 
 namespace AcaiaLogger
 {
     public sealed partial class MainPage : Page
     {
         private string LogFileName = "AcaiaLogger.csv";
-        private string LogFileHeader = "date,beanName,beanWeight,coffeeWeight,grind,time,notes,weightEverySec";
+        private string LogFileHeader = "date,beanName,beanWeight,coffeeWeight,grind,time,notes,weightEverySec,pressureEverySec";
 
-        private WeightEverySec weightEverySec = new WeightEverySec();
+        private ValuesEverySec weightEverySec = new ValuesEverySec();
 
         private readonly int __MaxRecordsToSave = 50;  // keep the last 50 records only
 
@@ -61,7 +54,7 @@ namespace AcaiaLogger
             new_record.Append(ToCsvFile(DetailGrind.Text));
             new_record.Append(ToCsvFile(DetailTime.Text));
             new_record.Append(ToCsvFile(DetailNotes.Text));
-            new_record.Append(weightEverySec.GetWeightsString());
+            new_record.Append(weightEverySec.GetValuesString());
 
             //
             var lines = await FileIO.ReadLinesAsync(file);
@@ -129,20 +122,21 @@ namespace AcaiaLogger
         }
     }
 
-    public class WeightEverySec
+    // class which stores average reading for every second. Assumes the readings arrive faster than 1 per sec
+    public class ValuesEverySec  
     {
-        List<double> weights = new List<double>();
+        List<double> values = new List<double>();
         DateTime startTime = DateTime.MinValue;
         double sum = 0.0;
         int num = 0;
 
-        public WeightEverySec()
+        public ValuesEverySec()
         {
         }
         public void Start()
         {
-            weights.Clear();
-            weights.Add(0.0);
+            values.Clear();
+            values.Add(0.0);
             sum = 0.0;
             num = 0;
 
@@ -153,26 +147,26 @@ namespace AcaiaLogger
             startTime = DateTime.MinValue;
 
             // prune the weights to remove constant values at the end
-            while(weights.Count > 2)
+            while(values.Count > 2)
             {
-                var last = weights.Count - 1;
-                if (Math.Abs(weights[last] - weights[last - 1]) < 0.15)
-                    weights.RemoveAt(last);
+                var last = values.Count - 1;
+                if (Math.Abs(values[last] - values[last - 1]) < 0.15)
+                    values.RemoveAt(last);
                 else
                     break;
             }
         }
 
-        public string GetActualTimeingString()
+        public string GetActualTimingString()
         {
-            return weights.Count.ToString();
+            return values.Count.ToString();
         }
 
-        public string GetWeightsString()
+        public string GetValuesString()
         {
             StringBuilder sb = new StringBuilder();
 
-            foreach (var w in weights)
+            foreach (var w in values)
                 sb.Append(w.ToString("0.0") + ";");
 
             var str = sb.ToString();
@@ -186,12 +180,12 @@ namespace AcaiaLogger
                 return true;
 
             var ts = DateTime.Now - startTime;
-            if (ts.TotalSeconds > weights.Count)
+            if (ts.TotalSeconds > values.Count)
             {
                 if (num <= 1)
                     return false; // if no more reading values was accumulated over the previous second, i.e. something is wrong
 
-                weights.Add(sum / (double)num);
+                values.Add(sum / (double)num);
                 sum = 0.0;
                 num = 0;
             }
