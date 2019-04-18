@@ -20,18 +20,26 @@ namespace AcaiaLogger
     public sealed partial class MainPage : Page
     {
         private string AcaiaDeviceId = String.Empty;
+        private string TestoDeviceId = String.Empty;
 
         private BluetoothCacheMode bluetoothCacheMode = BluetoothCacheMode.Cached;
 
         private BluetoothLEDevice bluetoothDeviceScale = null;
+        private BluetoothLEDevice bluetoothDeviceTesto = null;
+
         private GattCharacteristic selectedCharacteristicScale = null;
+        private GattCharacteristic selectedCharacteristicTestoWrite = null;
+        private GattCharacteristic selectedCharacteristicTestoNotif = null;
 
         private DispatcherTimer heartBeatTimer;
 
-        private enum AppStatusEnum { Disconnected, ScaleDiscovered, CharacteristicConnected }
+        private enum AppStatusEnum { Disconnected, ScaleDiscovered, TestoDiscovered,
+            CharacteristicScaleConnected, CharacteristicTestoConnected }
 
         private AppStatusEnum appStatus = AppStatusEnum.Disconnected;
+
         private bool subscribedForNotificationsScale = false;
+        private bool subscribedForNotificationsTesto = false;
 
         public MainPage()
         {
@@ -328,7 +336,7 @@ namespace AcaiaLogger
 
                     WriteAppIdentity(); // in order to start receiving weights
 
-                    appStatus = AppStatusEnum.CharacteristicConnected;
+                    appStatus = AppStatusEnum.CharacteristicScaleConnected;
 
                     NotifyUser("Connected, subscribed to weight notifications", NotifyType.StatusMessage);
 
@@ -344,7 +352,7 @@ namespace AcaiaLogger
                     FatalError("Exception when accessing service or its characteristics: " + ex.Message);
                 }
             }
-            else if(appStatus == AppStatusEnum.CharacteristicConnected)
+            else if(appStatus == AppStatusEnum.CharacteristicScaleConnected)
             {
                 WriteHeartBeat();
                 heartBeatTimer.Start();

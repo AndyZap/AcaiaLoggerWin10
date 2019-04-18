@@ -43,10 +43,10 @@
                     <!-- 
                     StackPanel LogBrew
                     -->
-                    <StackPanel  x:Name="PanelLogBrew" Grid.Row="0" Margin="0,0,0,10" Visibility="Collapsed">
+                    <StackPanel  x:Name="PanelLogBrew" Grid.Row="0" Margin="0,0,0,10" >
                         <TextBlock Text="Connect Acaia scale"  Margin="0,10,0,10" Style="{StaticResource SampleHeaderTextStyle}"/>
                         <TextBlock TextWrapping="Wrap"   Margin="0,10,0,10" >
-                Enumerate nearby Bluetooth Low Energy devices, then select and pair a device which name starts with "PROCH" or "ACAIA"
+                Enumerate nearby Bluetooth Low Energy devices, then select one with name "PROCH" or "ACAIA" and another with "T549i"
                         </TextBlock>
                         <TextBlock TextWrapping="Wrap"   Margin="0,10,0,10" >
                 Once the connection is established, enable notification for the weight measurements
@@ -54,6 +54,7 @@
                         <StackPanel Margin="0,10,0,0" Orientation="Horizontal">
                             <Button x:Name="BtnConnect" Content="Connect" Margin="0,10,10,10" FontSize="24" Click="BtnConnect_Click" />
                             <Button x:Name="BtnDisconnect" Content="Disconnect" Margin="0,10,10,10" IsEnabled="False" FontSize="24" Click="BtnDisconnect_Click" />
+                            <CheckBox x:Name="ChkTesto" Content="Testo 549i" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="10,10,10,10" FontSize="24" IsTabStop="False"/>
                         </StackPanel>
 
                         <TextBlock Text="Log a brew"  Margin="0,30,0,10" Style="{StaticResource SampleHeaderTextStyle}"/>
@@ -83,7 +84,7 @@
                     <!-- 
                     StackPanel BrewDetails
                     -->
-                    <StackPanel  x:Name="PanelBrewDetails" Grid.Row="1" Margin="0,0,0,10">
+                    <StackPanel  x:Name="PanelBrewDetails" Grid.Row="1" Margin="0,0,0,10" Visibility="Collapsed">
                         <TextBlock Text="Brew Details" Style="{StaticResource SampleHeaderTextStyle}"/>
                         <StackPanel Margin="0,10,0,0" Orientation="Horizontal">
                             <Button x:Name="BtnSaveLog" Content="Add to log" Margin="0,10,10,10" IsEnabled="False" FontSize="24" Click="BtnSaveLog_Click" />
