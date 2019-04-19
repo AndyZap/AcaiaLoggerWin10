@@ -144,24 +144,39 @@ namespace AcaiaLogger
 
             startTime = DateTime.Now;
         }
-        public void Stop()
+        public void Stop(int required_num_values) // to sync the array sizes between weight and pressure
         {
             startTime = DateTime.MinValue;
 
-            // prune the weights to remove constant values at the end
-            while(values.Count > 2)
+            if (required_num_values <= 0) // prune the weights to remove constant values at the end
             {
-                var last = values.Count - 1;
-                if (Math.Abs(values[last] - values[last - 1]) < 0.15)
+                while (values.Count > 2)
+                {
+                    var last = values.Count - 1;
+                    if (Math.Abs(values[last] - values[last - 1]) < 0.15)
+                        values.RemoveAt(last);
+                    else
+                        break;
+                }
+            }
+            else  // just sync to the required value
+            {
+                while (values.Count > required_num_values)
+                {
+                    var last = values.Count - 1;
                     values.RemoveAt(last);
-                else
-                    break;
+                }
             }
         }
 
         public string GetActualTimingString()
         {
             return values.Count.ToString();
+        }
+
+        public int GetActualNumValues()
+        {
+            return values.Count;
         }
 
         public string GetValuesString()

@@ -227,7 +227,7 @@ namespace AcaiaLogger
 
         private void UpdatePressure(double pressure_bar)
         {
-            LogBrewPressure.Text = pressure_bar == double.MinValue ? "---" : pressure_bar.ToString("0.00");
+            LogBrewPressure.Text = pressure_bar == double.MinValue ? "---" : pressure_bar.ToString("0.0");
 
             // Raise an event if necessary to enable a screen reader to announce the status update.
             var peer = FrameworkElementAutomationPeer.FromElement(LogBrewPressure);
@@ -249,6 +249,8 @@ namespace AcaiaLogger
         {
             ScenarioControl.SelectedIndex = 0;
 
+            NotifyUser("Connecting ... ", NotifyType.StatusMessage);
+
             BtnConnect.IsEnabled = false;
             BtnDisconnect.IsEnabled = true;
 
@@ -256,48 +258,55 @@ namespace AcaiaLogger
 
             //  ===========   ACAIA  ==================
 
-            statusScale = StatusEnum.Disabled;  // AAZ DEBUG
+            statusScale = StatusEnum.Disconnected;
 
-            if (deviceIdAcaia != String.Empty) // try to connect if we already know the DeviceID
+            if (statusScale != StatusEnum.Disabled)
             {
-                try
+
+                if (deviceIdAcaia != String.Empty) // try to connect if we already know the DeviceID
                 {
-                    bluetoothDeviceScale = await BluetoothLEDevice.FromIdAsync(deviceIdAcaia);
+                    try
+                    {
+                        bluetoothDeviceScale = await BluetoothLEDevice.FromIdAsync(deviceIdAcaia);
+                    }
+                    catch (Exception) { }
                 }
-                catch (Exception) { }
-            }
-            
-            if (bluetoothDeviceScale == null) // Failed to connect with the device ID, need to search for the scale
-            {
-                if (deviceWatcher == null)
-                    need_device_watcher = true;
-            }
-            else // we have bluetoothLeDevice, connect to the characteristic
-            {
-                statusScale = StatusEnum.Discovered;
+
+                if (bluetoothDeviceScale == null) // Failed to connect with the device ID, need to search for the scale
+                {
+                    if (deviceWatcher == null)
+                        need_device_watcher = true;
+                }
+                else // we have bluetoothLeDevice, connect to the characteristic
+                {
+                    statusScale = StatusEnum.Discovered;
+                }
             }
 
             //  ===========   TESTO  ==================
 
             statusTesto = ChkTesto.IsOn ? StatusEnum.Disconnected : StatusEnum.Disabled;
 
-            if (deviceIdTesto != String.Empty) // try to connect if we already know the DeviceID
+            if (statusTesto != StatusEnum.Disabled)
             {
-                try
+                if (deviceIdTesto != String.Empty) // try to connect if we already know the DeviceID
                 {
-                    bluetoothDeviceTesto = await BluetoothLEDevice.FromIdAsync(deviceIdTesto);
+                    try
+                    {
+                        bluetoothDeviceTesto = await BluetoothLEDevice.FromIdAsync(deviceIdTesto);
+                    }
+                    catch (Exception) { }
                 }
-                catch (Exception) { }
-            }
 
-            if (bluetoothDeviceTesto == null) // Failed to connect with the device ID, need to search for testo
-            {
-                if (deviceWatcher == null)
-                    need_device_watcher = true;
-            }
-            else // we have bluetoothLeDevice, connect to the characteristic
-            {
-                statusTesto = StatusEnum.Discovered;
+                if (bluetoothDeviceTesto == null) // Failed to connect with the device ID, need to search for testo
+                {
+                    if (deviceWatcher == null)
+                        need_device_watcher = true;
+                }
+                else // we have bluetoothLeDevice, connect to the characteristic
+                {
+                    statusTesto = StatusEnum.Discovered;
+                }
             }
 
             if (need_device_watcher)
@@ -642,7 +651,7 @@ namespace AcaiaLogger
             BtnStopLog.IsEnabled = false;
             BtnZeroPressure.IsEnabled = false;
 
-            // statusScale = StatusEnum.Disconnected; // AAZ
+            statusScale = StatusEnum.Disconnected;
 
             statusTesto = ChkTesto.IsOn ? StatusEnum.Disconnected : StatusEnum.Disabled;
 
@@ -676,8 +685,8 @@ namespace AcaiaLogger
             CryptographicBuffer.CopyToByteArray(args.CharacteristicValue, out data);
 
             // for debug
-            var message = "ValueChanged at " + DateTime.Now.ToString("hh:mm:ss.FFF ") + BitConverter.ToString(data);
-            NotifyUser(message, NotifyType.StatusMessage);
+            //var message = "ValueChanged at " + DateTime.Now.ToString("hh:mm:ss.FFF ") + BitConverter.ToString(data);
+            //NotifyUser(message, NotifyType.StatusMessage);
 
             double pressure_bar = 0.0;
             if (DecodePressure(data, ref pressure_bar))
@@ -726,8 +735,8 @@ namespace AcaiaLogger
 
             startTimeWeight = DateTime.MinValue;
 
-            weightEverySec.Stop();
-            pressureEverySec.Stop();
+            weightEverySec.Stop(0);
+            pressureEverySec.Stop(weightEverySec.GetActualNumValues());
 
             DetailDateTime.Text = DateTime.Now.ToString("yyyy MMM dd ddd HH:mm");
             DetailCoffeeWeight.Text = LogBrewWeight.Text;

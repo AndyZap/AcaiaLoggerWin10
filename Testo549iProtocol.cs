@@ -59,15 +59,15 @@ namespace AcaiaLogger
 
             /* example pressure record
 
-            10 80 20 00 00 00 08 95 14 00 00 00 44 69 66 66 65 72 65 6e
-            74 69 61 6c 50 72 65 73 73 75 72 65 00 d0 e9 45 00 00 37 37
+            10 80 20 00 00 00 08 95 14 00 00 00 44 69 66 66 65 72 65 6e  // first PDU
+            74 69 61 6c 50 72 65 73 73 75 72 65 00 d0 e9 45 00 00 37 37  // second PDU
 
             we are interested in 4 bytes at offset 32, i.e. 00 d0 e9 45 00 - which are float value in Pa = 1E-5 bar */
 
-            if (data.Length != 40)
+            if (data.Length != 20)
                 return false;
 
-            byte[] pressure_pattern = new byte[] { 0x10, 0x80, 0x20, 0x00, 0x00 };
+            byte[] pressure_pattern = new byte[] { 0x74, 0x69, 0x61, 0x6c, 0x50 };
 
             byte[] candidate = new byte[5];
             Array.Copy(data, 0, candidate, 0, 5);
@@ -76,7 +76,7 @@ namespace AcaiaLogger
 
             try
             {
-                pressure_bar = BitConverter.ToSingle(data, 32) * 1E-5;
+                pressure_bar = BitConverter.ToSingle(data, 12) * 1E-5;
 
                 return true;
             }
