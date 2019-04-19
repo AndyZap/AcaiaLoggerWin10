@@ -16,6 +16,7 @@ namespace AcaiaLogger
         private string LogFileHeader = "date,beanName,beanWeight,coffeeWeight,grind,time,notes,weightEverySec,pressureEverySec";
 
         private ValuesEverySec weightEverySec = new ValuesEverySec();
+        private ValuesEverySec pressureEverySec = new ValuesEverySec();
 
         private readonly int __MaxRecordsToSave = 50;  // keep the last 50 records only
 
@@ -55,6 +56,7 @@ namespace AcaiaLogger
             new_record.Append(ToCsvFile(DetailTime.Text));
             new_record.Append(ToCsvFile(DetailNotes.Text));
             new_record.Append(weightEverySec.GetValuesString());
+            new_record.Append(pressureEverySec.GetValuesString());
 
             //
             var lines = await FileIO.ReadLinesAsync(file);

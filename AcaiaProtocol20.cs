@@ -37,7 +37,7 @@ namespace AcaiaLogger
             try
             {
                 // BT_Code: Writes the value from the buffer to the characteristic.
-                var result = await selectedCharacteristicScale.WriteValueWithResultAsync(payload.AsBuffer());
+                var result = await characteristicScale.WriteValueWithResultAsync(payload.AsBuffer());
 
                 if (result.Status != GattCommunicationStatus.Success)
                     FatalError("Failed to write to scale characteristic");

@@ -51,10 +51,11 @@
                         <TextBlock TextWrapping="Wrap"   Margin="0,10,0,10" >
                 Once the connection is established, enable notification for the weight measurements
                         </TextBlock>
-                        <StackPanel Margin="0,10,0,0" Orientation="Horizontal">
-                            <Button x:Name="BtnConnect" Content="Connect" Margin="0,10,10,10" FontSize="24" Click="BtnConnect_Click" />
-                            <Button x:Name="BtnDisconnect" Content="Disconnect" Margin="0,10,10,10" IsEnabled="False" FontSize="24" Click="BtnDisconnect_Click" />
-                            <CheckBox x:Name="ChkTesto" Content="Testo 549i" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="10,10,10,10" FontSize="24" IsTabStop="False"/>
+                        <StackPanel  Margin="0,10,0,0" Orientation="Horizontal">
+                            <StackPanel x:Name="PanelConnectDisconnect" HorizontalAlignment="Stretch" Height="100" Margin="0,0,0,0" VerticalAlignment="Stretch" Width="10"/>                            
+                            <Button x:Name="BtnConnect" Content="Connect" Margin="20,10,10,10" FontSize="24" Click="BtnConnect_Click" />
+                            <Button x:Name="BtnDisconnect" Content="Disconnect" Margin="10,10,10,10" IsEnabled="False" FontSize="24" Click="BtnDisconnect_Click" />
+                            <ToggleSwitch x:Name="ChkTesto" Header="Testo 549i" HorizontalAlignment="Stretch" Margin="10,10,10,10" VerticalAlignment="Stretch" FontSize="18" Toggled="ChkTesto_Toggled"/>
                         </StackPanel>
 
                         <TextBlock Text="Log a brew"  Margin="0,30,0,10" Style="{StaticResource SampleHeaderTextStyle}"/>
@@ -62,7 +63,8 @@
                             <Button x:Name="BtnBeansWeight" Content="Beans Weight" Margin="0,10,10,10" IsEnabled="False" FontSize="24" Click="BtnBeansWeight_Click"/>
                             <Button x:Name="BtnTare" Content="Tare" Margin="30,10,10,10" IsEnabled="False" FontSize="24" Click="BtnTare_Click" />
                             <Button x:Name="BtnStartLog" Content="Start" Margin="30,10,10,10" IsEnabled="False" FontSize="24" Click="BtnStartLog_Click"/>
-                            <Button x:Name="BtnStopLog" Content="Stop" Margin="30,10,10,10" IsEnabled="False" FontSize="24" Click="BtnStopLog_Click" />
+                            <Button x:Name="BtnStopLog" Content="Stop" Margin="30,10,10,10" IsEnabled="False" FontSize="24" Click="BtnStopLog_Click"/>
+                            <Button x:Name="BtnZeroPressure" Content="Zero T549i" Margin="30,10,10,10" IsEnabled="False" FontSize="24" Click="BtnZeroPressure_Click"/>
                         </StackPanel>
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -72,13 +74,15 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="auto"/>
                                 <RowDefinition Height="auto"/>
+                                <RowDefinition Height="auto"/>
                             </Grid.RowDefinitions>
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="Time, sec"  Margin="0,10,10,10"  FontSize="36"/>
                             <TextBlock Grid.Row="1" Grid.Column="0" Text="Weight, g"  Margin="0,10,10,10" FontSize="36"/>
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Pressure, bar"  Margin="0,10,10,10" FontSize="36"/>
                             <TextBlock Grid.Row="0" Grid.Column="1" x:Name="LogBrewTime" Text="---"  Margin="30,10,10,10" FontSize="36" AutomationProperties.LiveSetting="Assertive"/>
                             <TextBlock Grid.Row="1" Grid.Column="1" x:Name="LogBrewWeight" Text="---"  Margin="30,10,10,10" FontSize="36" AutomationProperties.LiveSetting="Assertive"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1" x:Name="LogBrewPressure" Text="---"  Margin="30,10,10,10" FontSize="36" AutomationProperties.LiveSetting="Assertive"/>
                         </Grid>
-
                     </StackPanel>
 
                     <!-- 

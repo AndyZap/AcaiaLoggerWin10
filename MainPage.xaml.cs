@@ -19,24 +19,24 @@ namespace AcaiaLogger
 {
     public sealed partial class MainPage : Page
     {
-        private string AcaiaDeviceId = String.Empty;
-        private string TestoDeviceId = String.Empty;
+        private string deviceIdAcaia = String.Empty;
+        private string deviceIdTesto = String.Empty;
 
         private BluetoothCacheMode bluetoothCacheMode = BluetoothCacheMode.Cached;
 
         private BluetoothLEDevice bluetoothDeviceScale = null;
         private BluetoothLEDevice bluetoothDeviceTesto = null;
 
-        private GattCharacteristic selectedCharacteristicScale = null;
-        private GattCharacteristic selectedCharacteristicTestoWrite = null;
-        private GattCharacteristic selectedCharacteristicTestoNotif = null;
+        private GattCharacteristic characteristicScale = null;
+        private GattCharacteristic characteristicTestoWrite = null;
+        private GattCharacteristic characteristicTestoNotif = null;
 
         private DispatcherTimer heartBeatTimer;
 
-        private enum AppStatusEnum { Disconnected, ScaleDiscovered, TestoDiscovered,
-            CharacteristicScaleConnected, CharacteristicTestoConnected }
+        private enum StatusEnum { Disabled, Disconnected, Discovered, CharacteristicConnected }
 
-        private AppStatusEnum appStatus = AppStatusEnum.Disconnected;
+        private StatusEnum statusScale = StatusEnum.Disconnected;
+        private StatusEnum statusTesto = StatusEnum.Disconnected;
 
         private bool subscribedForNotificationsScale = false;
         private bool subscribedForNotificationsTesto = false;
@@ -53,14 +53,20 @@ namespace AcaiaLogger
 
             ApplicationDataContainer localSettings = ApplicationData.Current.LocalSettings;
 
-            var val = localSettings.Values["AcaiaDeviceId"] as string;
-            AcaiaDeviceId = val == null? "" : val;
+            var val = localSettings.Values["DeviceIdAcaia"] as string;
+            deviceIdAcaia = val == null? "" : val;
+
+            val = localSettings.Values["DeviceIdTesto"] as string;
+            deviceIdTesto = val == null ? "" : val;
 
             val = localSettings.Values["DetailBeansName"] as string;
             DetailBeansName.Text = val == null ? "" : val;
 
             val = localSettings.Values["DetailGrind"] as string;
             DetailGrind.Text = val == null ? "" : val;
+
+            val = localSettings.Values["EnableTesto"] as string;
+            ChkTesto.IsOn = val == null ? false : val == "true";
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -76,6 +82,8 @@ namespace AcaiaLogger
             LoadLog();
 
             ResultsListView.ItemsSource = BrewLog;
+
+            PanelConnectDisconnect.Background = new SolidColorBrush(Windows.UI.Colors.Yellow);
         }
 
         private void ScenarioControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -134,6 +142,19 @@ namespace AcaiaLogger
             else
             {
                 var task = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => UpdateWeight(weight_gramm));
+            }
+        }
+        public void NotifyPressure(double pressure_bar)
+        {
+            // If called from the UI thread, then update immediately.
+            // Otherwise, schedule a task on the UI thread to perform the update.
+            if (Dispatcher.HasThreadAccess)
+            {
+                UpdatePressure(pressure_bar);
+            }
+            else
+            {
+                var task = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => UpdatePressure(pressure_bar));
             }
         }
 
@@ -204,6 +225,21 @@ namespace AcaiaLogger
                 FatalError("Error: do not receive regular weight measurements from the scale");
         }
 
+        private void UpdatePressure(double pressure_bar)
+        {
+            LogBrewPressure.Text = pressure_bar == double.MinValue ? "---" : pressure_bar.ToString("0.00");
+
+            // Raise an event if necessary to enable a screen reader to announce the status update.
+            var peer = FrameworkElementAutomationPeer.FromElement(LogBrewPressure);
+            if (peer != null)
+            {
+                peer.RaiseAutomationEvent(AutomationEvents.LiveRegionChanged);
+            }
+
+            if (!pressureEverySec.NewReading(pressure_bar))
+                FatalError("Error: do not receive regular pressure measurements from T549i");
+        }
+
         private void MenuToggleButton_Click(object sender, RoutedEventArgs e)
         {
             Splitter.IsPaneOpen = !Splitter.IsPaneOpen;
@@ -211,16 +247,22 @@ namespace AcaiaLogger
 
         private async void BtnConnect_Click(object sender, RoutedEventArgs e)
         {
+            ScenarioControl.SelectedIndex = 0;
+
             BtnConnect.IsEnabled = false;
             BtnDisconnect.IsEnabled = true;
 
-            appStatus = AppStatusEnum.Disconnected;
+            bool need_device_watcher = false;
 
-            if (AcaiaDeviceId != String.Empty) // try to connect if we already know the DeviceID
+            //  ===========   ACAIA  ==================
+
+            statusScale = StatusEnum.Disabled;  // AAZ DEBUG
+
+            if (deviceIdAcaia != String.Empty) // try to connect if we already know the DeviceID
             {
                 try
                 {
-                    bluetoothDeviceScale = await BluetoothLEDevice.FromIdAsync(AcaiaDeviceId);
+                    bluetoothDeviceScale = await BluetoothLEDevice.FromIdAsync(deviceIdAcaia);
                 }
                 catch (Exception) { }
             }
@@ -228,14 +270,42 @@ namespace AcaiaLogger
             if (bluetoothDeviceScale == null) // Failed to connect with the device ID, need to search for the scale
             {
                 if (deviceWatcher == null)
-                    StartBleDeviceWatcher();
-
-                NotifyUser("Device watcher started", NotifyType.StatusMessage);
+                    need_device_watcher = true;
             }
             else // we have bluetoothLeDevice, connect to the characteristic
             {
-                appStatus = AppStatusEnum.ScaleDiscovered;
+                statusScale = StatusEnum.Discovered;
             }
+
+            //  ===========   TESTO  ==================
+
+            statusTesto = ChkTesto.IsOn ? StatusEnum.Disconnected : StatusEnum.Disabled;
+
+            if (deviceIdTesto != String.Empty) // try to connect if we already know the DeviceID
+            {
+                try
+                {
+                    bluetoothDeviceTesto = await BluetoothLEDevice.FromIdAsync(deviceIdTesto);
+                }
+                catch (Exception) { }
+            }
+
+            if (bluetoothDeviceTesto == null) // Failed to connect with the device ID, need to search for testo
+            {
+                if (deviceWatcher == null)
+                    need_device_watcher = true;
+            }
+            else // we have bluetoothLeDevice, connect to the characteristic
+            {
+                statusTesto = StatusEnum.Discovered;
+            }
+
+            if (need_device_watcher)
+            {
+                StartBleDeviceWatcher();
+                NotifyUser("Device watcher started", NotifyType.StatusMessage);
+            }
+
             heartBeatTimer.Start();
         }
 
@@ -243,43 +313,54 @@ namespace AcaiaLogger
         {
             heartBeatTimer.Stop();
 
-            if (appStatus == AppStatusEnum.Disconnected)
+            // Commmon actions from scale and testo
+            bool device_watcher_needs_stopping = false;
+            string message_scale = "";
+            string message_testo = "";
+
+            //  ===========   ACAIA  ==================
+
+            if (statusScale == StatusEnum.Disabled)
+            {
+                // do nothing
+            }
+            else if (statusScale == StatusEnum.Disconnected)
             {
                 foreach (var d in KnownDevices)
                 {
                     if (d.Name.StartsWith("PROCH") || d.Name.StartsWith("ACAIA"))
                     {
-                        AcaiaDeviceId = d.Id;
+                        deviceIdAcaia = d.Id;
 
                         ApplicationDataContainer localSettings = ApplicationData.Current.LocalSettings;
-                        localSettings.Values["AcaiaDeviceId"] = AcaiaDeviceId;
+                        localSettings.Values["DeviceIdAcaia"] = deviceIdAcaia;
 
-                        StopBleDeviceWatcher();
-                        NotifyUser("Found Acaia scale with id " + AcaiaDeviceId, NotifyType.StatusMessage);
+                        statusScale = StatusEnum.Discovered;
 
-                        appStatus = AppStatusEnum.ScaleDiscovered;
+                        device_watcher_needs_stopping = true;
+
+                        message_scale = "Discovered " + deviceIdAcaia + " ";
+
+                        break;
                     }
                 }
-                heartBeatTimer.Start();
             }
-            else if (appStatus == AppStatusEnum.ScaleDiscovered)
+            else if (statusScale == StatusEnum.Discovered)
             {
-                NotifyUser("Enabling weight measurements ...", NotifyType.StatusMessage);
-
                 try
                 {
                     if (bluetoothDeviceScale == null)
                     {
                         try
                         {
-                            bluetoothDeviceScale = await BluetoothLEDevice.FromIdAsync(AcaiaDeviceId);
+                            bluetoothDeviceScale = await BluetoothLEDevice.FromIdAsync(deviceIdAcaia);
                         }
                         catch (Exception) { }
                     }
 
                     if (bluetoothDeviceScale == null)
                     {
-                        FatalError("Failed to create BluetoothLEDevice");
+                        FatalError("Failed to create Acaia BluetoothLEDevice");
                         return;
                     }
 
@@ -326,39 +407,203 @@ namespace AcaiaLogger
                         return;
                     }
 
-                    selectedCharacteristicScale = result_charact.Characteristics[0];
+                    characteristicScale = result_charact.Characteristics[0];
 
-                    selectedCharacteristicScale.ValueChanged += CharacteristicScale_ValueChanged;
+                    characteristicScale.ValueChanged += CharacteristicScale_ValueChanged;
 
                     // enable notifications
-                    var result = await selectedCharacteristicScale.WriteClientCharacteristicConfigurationDescriptorAsync(GattClientCharacteristicConfigurationDescriptorValue.Notify);
+                    var result = await characteristicScale.WriteClientCharacteristicConfigurationDescriptorAsync(GattClientCharacteristicConfigurationDescriptorValue.Notify);
                     subscribedForNotificationsScale = true;
 
                     WriteAppIdentity(); // in order to start receiving weights
 
-                    appStatus = AppStatusEnum.CharacteristicScaleConnected;
+                    statusScale = StatusEnum.CharacteristicConnected;
 
-                    NotifyUser("Connected, subscribed to weight notifications", NotifyType.StatusMessage);
+                    message_scale = "Connected to Acaia ";
+
+                    PanelConnectDisconnect.Background = new SolidColorBrush(Windows.UI.Colors.Green);
 
                     BtnBeansWeight.IsEnabled = true;
                     BtnTare.IsEnabled = true;
                     BtnStartLog.IsEnabled = true;
                     BtnStopLog.IsEnabled = false;
-
-                    heartBeatTimer.Start();
                 }
                 catch (Exception ex)
                 {
                     FatalError("Exception when accessing service or its characteristics: " + ex.Message);
+                    return;
                 }
             }
-            else if(appStatus == AppStatusEnum.CharacteristicScaleConnected)
+            else if (statusScale == StatusEnum.CharacteristicConnected)
             {
                 WriteHeartBeat();
-                heartBeatTimer.Start();
             }
             else
-                FatalError("Unknown appStatus" + appStatus.ToString());
+            {
+                FatalError("Unknown Status for Acaia scale" + statusScale.ToString());
+                return;
+            }
+
+
+
+            //  ===========   TESTO  ==================
+
+            if (statusTesto == StatusEnum.Disabled)
+            {
+                // do nothing
+            }
+            else if (statusTesto == StatusEnum.Disconnected)
+            {
+                foreach (var d in KnownDevices)
+                {
+                    if (d.Name.StartsWith("T549i"))
+                    {
+                        deviceIdTesto = d.Id;
+
+                        ApplicationDataContainer localSettings = ApplicationData.Current.LocalSettings;
+                        localSettings.Values["DeviceIdTesto"] = deviceIdTesto;
+
+                        statusTesto = StatusEnum.Discovered;
+
+                        device_watcher_needs_stopping = true;
+
+                        message_testo = "Discovered " + deviceIdTesto + " ";
+                    }
+                }
+            }
+            else if (statusTesto == StatusEnum.Discovered)
+            {
+                try
+                {
+                    if (bluetoothDeviceTesto == null)
+                    {
+                        try
+                        {
+                            bluetoothDeviceTesto = await BluetoothLEDevice.FromIdAsync(deviceIdTesto);
+                        }
+                        catch (Exception) { }
+                    }
+
+                    if (bluetoothDeviceTesto == null)
+                    {
+                        FatalError("Failed to create Testo BluetoothLEDevice");
+                        return;
+                    }
+
+                    GattDeviceServicesResult result_service = await bluetoothDeviceTesto.GetGattServicesForUuidAsync(
+                    new Guid(TestoServiceGuid), bluetoothCacheMode);
+
+                    if (result_service.Status != GattCommunicationStatus.Success)
+                    {
+                        FatalError("Failed to get Testo service 0xfff0 " + result_service.Status.ToString());
+                        return;
+                    }
+
+                    if (result_service.Services.Count != 1)
+                    {
+                        FatalError("Error, expected to find one Testo service 0xfff0");
+                        return;
+                    }
+
+                    var service = result_service.Services[0];
+
+                    // Ensure we have access to the device.
+                    var accessStatus = await service.RequestAccessAsync();
+
+                    if (accessStatus != DeviceAccessStatus.Allowed)
+                    {
+                        FatalError("Do not have access to the Testo service 0xfff0");
+                        return;
+                    }
+
+                    // BT_Code: Get all the child characteristics of a service. Use the cache mode to specify uncached characterstics only 
+                    // and the new Async functions to get the characteristics of unpaired devices as well. 
+
+                    //  ====  NOTIF characteristics  =====
+
+                    GattCharacteristicsResult result_charact = await service.GetCharacteristicsForUuidAsync(new Guid(TestoCharactNotifGuid), bluetoothCacheMode);
+
+                    if (result_charact.Status != GattCommunicationStatus.Success)
+                    {
+                        FatalError("Failed to get Testo service characteristics 0xfff2 " + result_charact.Status.ToString());
+                        return;
+                    }
+
+                    if (result_charact.Characteristics.Count != 1)
+                    {
+                        FatalError("Error, expected to find one Testo service characteristics 0xfff2");
+                        return;
+                    }
+
+                    characteristicTestoNotif = result_charact.Characteristics[0];
+
+                    characteristicTestoNotif.ValueChanged += CharacteristicTesto_ValueChanged;
+
+                    // enable notifications
+                    var result = await characteristicTestoNotif.WriteClientCharacteristicConfigurationDescriptorAsync(GattClientCharacteristicConfigurationDescriptorValue.Notify);
+                    subscribedForNotificationsTesto = true;
+
+
+                    //  ====  WRITE characteristics  =====
+
+                    result_charact = await service.GetCharacteristicsForUuidAsync(new Guid(TestoCharactWriteGuid), bluetoothCacheMode);
+
+                    if (result_charact.Status != GattCommunicationStatus.Success)
+                    {
+                        FatalError("Failed to get Testo service characteristics fff1 " + result_charact.Status.ToString());
+                        return;
+                    }
+
+                    if (result_charact.Characteristics.Count != 1)
+                    {
+                        FatalError("Error, expected to find one Testo service characteristics fff1");
+                        return;
+                    }
+
+                    characteristicTestoWrite = result_charact.Characteristics[0];
+
+
+
+                    WriteCommandsToEnablePressureMeasurements(); // in order to start receiving pressure
+
+                    statusTesto = StatusEnum.CharacteristicConnected;
+
+                    message_testo = "Connected to T549i ";
+
+                    PanelConnectDisconnect.Background = new SolidColorBrush(Windows.UI.Colors.Green);
+
+                    BtnBeansWeight.IsEnabled = true;
+                    BtnTare.IsEnabled = true;
+                    BtnStartLog.IsEnabled = true;
+                    BtnStopLog.IsEnabled = false;
+                    BtnZeroPressure.IsEnabled = true;
+                }
+                catch (Exception ex)
+                {
+                    FatalError("Exception when accessing service or its characteristics: " + ex.Message);
+                    return;
+                }
+            }
+            else if (statusTesto == StatusEnum.CharacteristicConnected)
+            {
+                // do nothing
+            }
+            else
+            {
+                FatalError("Unknown Status for Testo" + statusTesto.ToString());
+                return;
+            }
+
+            // Do not need device watcher anymore
+            if (statusScale != StatusEnum.Disconnected && statusTesto == StatusEnum.Disconnected && device_watcher_needs_stopping)
+                StopBleDeviceWatcher();
+
+            // Notify
+            if (message_scale != "" || message_testo != "")
+                NotifyUser(message_scale + message_testo, NotifyType.StatusMessage);
+
+
+            heartBeatTimer.Start();
         }
 
         private async void Disconnect()
@@ -369,16 +614,22 @@ namespace AcaiaLogger
 
             if (subscribedForNotificationsScale)
             {
-                // Need to clear the CCCD from the remote device so we stop receiving notifications
-                var result = await selectedCharacteristicScale.WriteClientCharacteristicConfigurationDescriptorAsync(GattClientCharacteristicConfigurationDescriptorValue.None);
+                await characteristicScale.WriteClientCharacteristicConfigurationDescriptorAsync(GattClientCharacteristicConfigurationDescriptorValue.None);
 
-                //if (result != GattCommunicationStatus.Success)
-                //    Log("Was not able to disable notifications");
-
-                selectedCharacteristicScale.ValueChanged -= CharacteristicScale_ValueChanged;
+                characteristicScale.ValueChanged -= CharacteristicScale_ValueChanged;
 
                 subscribedForNotificationsScale = false;
             }
+
+            if (subscribedForNotificationsTesto)
+            {
+                await characteristicTestoNotif.WriteClientCharacteristicConfigurationDescriptorAsync(GattClientCharacteristicConfigurationDescriptorValue.None);
+
+                characteristicTestoNotif.ValueChanged -= CharacteristicTesto_ValueChanged;
+
+                subscribedForNotificationsTesto = false;
+            }
+
             bluetoothDeviceScale?.Dispose();
             bluetoothDeviceScale = null;
 
@@ -389,11 +640,19 @@ namespace AcaiaLogger
             BtnTare.IsEnabled = false;
             BtnStartLog.IsEnabled = false;
             BtnStopLog.IsEnabled = false;
+            BtnZeroPressure.IsEnabled = false;
 
-            appStatus = AppStatusEnum.Disconnected;
+            // statusScale = StatusEnum.Disconnected; // AAZ
+
+            statusTesto = ChkTesto.IsOn ? StatusEnum.Disconnected : StatusEnum.Disabled;
 
             LogBrewWeight.Text = "---";
             LogBrewTime.Text = "---";
+            LogBrewPressure.Text = "---";
+
+            PanelConnectDisconnect.Background = new SolidColorBrush(Windows.UI.Colors.Yellow);
+
+            ScenarioControl.SelectedIndex = 0;
         }
 
         private void CharacteristicScale_ValueChanged(GattCharacteristic sender, GattValueChangedEventArgs args)
@@ -408,9 +667,21 @@ namespace AcaiaLogger
             double weight_gramm = 0.0;
             bool is_stable = true;
             if(DecodeWeight(data, ref weight_gramm, ref is_stable))
-            {
                 NotifyWeight(weight_gramm);
-            }
+        }
+
+        private void CharacteristicTesto_ValueChanged(GattCharacteristic sender, GattValueChangedEventArgs args)
+        {
+            byte[] data;
+            CryptographicBuffer.CopyToByteArray(args.CharacteristicValue, out data);
+
+            // for debug
+            var message = "ValueChanged at " + DateTime.Now.ToString("hh:mm:ss.FFF ") + BitConverter.ToString(data);
+            NotifyUser(message, NotifyType.StatusMessage);
+
+            double pressure_bar = 0.0;
+            if (DecodePressure(data, ref pressure_bar))
+                NotifyPressure(pressure_bar);
         }
 
         private void BtnDisconnect_Click(object sender, RoutedEventArgs e)
@@ -441,6 +712,7 @@ namespace AcaiaLogger
 
             startTimeWeight = DateTime.Now;
             weightEverySec.Start();
+            pressureEverySec.Start();
 
             NotifyUser("Started ...", NotifyType.StatusMessage);
         }
@@ -455,6 +727,7 @@ namespace AcaiaLogger
             startTimeWeight = DateTime.MinValue;
 
             weightEverySec.Stop();
+            pressureEverySec.Stop();
 
             DetailDateTime.Text = DateTime.Now.ToString("yyyy MMM dd ddd HH:mm");
             DetailCoffeeWeight.Text = LogBrewWeight.Text;
@@ -571,6 +844,18 @@ namespace AcaiaLogger
                 DetailGrind.Text = grind.ToString("0.00");
             }
             catch (Exception) { }
+        }
+
+        private void ChkTesto_Toggled(object sender, RoutedEventArgs e)
+        {
+            ApplicationDataContainer localSettings = ApplicationData.Current.LocalSettings;
+            localSettings.Values["EnableTesto"] = ChkTesto.IsOn ? "true" : "false";
+        }
+
+        private void BtnZeroPressure_Click(object sender, RoutedEventArgs e)
+        {
+            WriteZeroPressure();
+            NotifyUser("Zero pressure sensor", NotifyType.StatusMessage);
         }
     }
 
