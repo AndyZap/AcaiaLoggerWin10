@@ -55,8 +55,8 @@ namespace AcaiaLogger
             new_record.Append(ToCsvFile(DetailGrind.Text));
             new_record.Append(ToCsvFile(DetailTime.Text));
             new_record.Append(ToCsvFile(DetailNotes.Text));
-            new_record.Append(weightEverySec.GetValuesString());
-            new_record.Append(pressureEverySec.GetValuesString());
+            new_record.Append(weightEverySec.GetValuesString() + ",");
+            new_record.Append(pressureEverySec.GetValuesString() + ",");
 
             //
             var lines = await FileIO.ReadLinesAsync(file);
@@ -199,7 +199,7 @@ namespace AcaiaLogger
             var ts = DateTime.Now - startTime;
             if (ts.TotalSeconds > values.Count)
             {
-                if (num <= 1)
+                if (num < 1)
                     return false; // if no more reading values was accumulated over the previous second, i.e. something is wrong
 
                 values.Add(sum / (double)num);
