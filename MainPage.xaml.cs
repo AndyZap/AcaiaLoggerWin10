@@ -260,9 +260,8 @@ namespace AcaiaLogger
 
             statusScale = StatusEnum.Disconnected;
 
-            if (statusScale != StatusEnum.Disabled)
+            if(true)  // scale is always enabled (but testo could be disabled)
             {
-
                 if (deviceIdAcaia != String.Empty) // try to connect if we already know the DeviceID
                 {
                     try
@@ -585,7 +584,9 @@ namespace AcaiaLogger
                     BtnTare.IsEnabled = true;
                     BtnStartLog.IsEnabled = true;
                     BtnStopLog.IsEnabled = false;
-                    BtnZeroPressure.IsEnabled = true;
+
+                    if(ChkTesto.IsOn)
+                        BtnZeroPressure.IsEnabled = true;
                 }
                 catch (Exception ex)
                 {
@@ -604,7 +605,7 @@ namespace AcaiaLogger
             }
 
             // Do not need device watcher anymore
-            if (statusScale != StatusEnum.Disconnected && statusTesto == StatusEnum.Disconnected && device_watcher_needs_stopping)
+            if (statusScale != StatusEnum.Disconnected && statusTesto != StatusEnum.Disconnected && device_watcher_needs_stopping)
                 StopBleDeviceWatcher();
 
             // Notify
@@ -718,6 +719,8 @@ namespace AcaiaLogger
             BtnTare.IsEnabled = false;
             BtnStartLog.IsEnabled = false;
             BtnStopLog.IsEnabled = true;
+
+            WriteTare(); // tare, as I always forget to do this
 
             startTimeWeight = DateTime.Now;
             weightEverySec.Start();
