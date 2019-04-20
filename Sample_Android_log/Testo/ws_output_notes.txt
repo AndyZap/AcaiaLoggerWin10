@@ -1,0 +1,29 @@
+Testo 549i uses 2 characteristics (instead of 1 for Acaia): one to write, another one to receive notifications
+
+To start the weight measurements need to write these 3 PDUs, I was not able to decipher the meaning of these, as could not find anything in the decompiled APK package.
+
+(does not matter, provided that this works): 
+
+            // command 1
+            byte[] payload = new byte[] { 0x56, 0x00, 0x03, 0x00, 0x00, 0x00, 0x0c, 0x69, 0x02, 0x3e, 0x81 };
+
+            // command 2
+            payload = new byte[] { 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0x7b };
+
+            // command 3
+            payload = new byte[] { 0x11, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x5a };
+
+The weight command looks like this:
+
+            10 80 20 00 00 00 08 95 14 00 00 00 44 69 66 66 65 72 65 6e  // first PDU
+            74 69 61 6c 50 72 65 73 73 75 72 65 00 d0 e9 45 00 00 37 37  // second PDU
+
+            we are interested in 4 bytes at offset 32, i.e. 00 d0 e9 45 00 - which are float value in Pa = 1E-5 bar
+
+Bits from 44 69 66 66 are simply chars "DifferentialPressure" followed by the float value we are interested in.
+
+Also these is a command to zero the pressure sensor (2x PDUs):
+
+            byte[] payload = new byte[] { 0x05, 0x00, 0x13, 0x00, 0x00, 0x00, 0x04, 0xca, 0x0c, 0x00, 0x00, 0x00, 0x5a, 0x65, 0x72, 0x6f, 0x50, 0x72, 0x65, 0x73 };
+
+            payload = new byte[] { 0x73, 0x75, 0x72, 0x65, 0x01, 0x62, 0xe5 };

@@ -44,7 +44,7 @@
                     StackPanel LogBrew
                     -->
                     <StackPanel  x:Name="PanelLogBrew" Grid.Row="0" Margin="0,0,0,10" >
-                        <TextBlock Text="Connect Acaia scale"  Margin="0,10,0,10" Style="{StaticResource SampleHeaderTextStyle}"/>
+                        <TextBlock Text="Connect Acaia scale and Testo 549i"  Margin="0,10,0,10" Style="{StaticResource SampleHeaderTextStyle}"/>
                         <TextBlock TextWrapping="Wrap"   Margin="0,10,0,10" >
                 Enumerate nearby Bluetooth Low Energy devices, then select one with name "PROCH" or "ACAIA" and another with "T549i"
                         </TextBlock>
@@ -184,7 +184,7 @@
                     </ToggleButton.Content>
                 </ToggleButton>
             </Border>
-            <TextBlock x:Name="Header" Text="Acaia scale logger" Style="{StaticResource TagLineTextStyle}" Margin="0,15,0,0" FontSize="22" />
+            <TextBlock x:Name="Header" Text="Acaia scale logger with Testo 549i support" Style="{StaticResource TagLineTextStyle}" Margin="0,15,0,0" FontSize="22" />
         </StackPanel>
     </Grid>
 </Page>
