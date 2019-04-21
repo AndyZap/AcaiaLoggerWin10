@@ -720,7 +720,8 @@ namespace AcaiaLogger
             BtnStartLog.IsEnabled = false;
             BtnStopLog.IsEnabled = true;
 
-            WriteTare(); // tare, as I always forget to do this
+            if(LogBrewWeight.Text != "0.0")
+                WriteTare(); // tare, as I always forget to do this
 
             startTimeWeight = DateTime.Now;
             weightEverySec.Start();
@@ -821,8 +822,8 @@ namespace AcaiaLogger
                 }
 
                 // StatusLabel.Text = DateTime.Now.ToString("mm:ss") + " -- " + e.Key.ToString(); // enable to check if app received key events
-                if (Splitter.FocusState == FocusState.Unfocused)
-                    Splitter.Focus(FocusState.Keyboard);
+                if (ToggleButton.FocusState == FocusState.Unfocused)
+                    ToggleButton.Focus(FocusState.Keyboard);
             }
             else
             {

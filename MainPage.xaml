@@ -178,7 +178,7 @@
 
         <StackPanel x:Name="HeaderPanel" Orientation="Horizontal">
             <Border Background="{ThemeResource SystemControlBackgroundChromeMediumBrush}" Grid.Row="0">
-                <ToggleButton Style="{StaticResource SymbolButton}" Click="MenuToggleButton_Click" VerticalAlignment="Top" Foreground="{ThemeResource ApplicationForegroundThemeBrush}">
+                <ToggleButton x:Name="ToggleButton" Style="{StaticResource SymbolButton}" Click="MenuToggleButton_Click" VerticalAlignment="Top" Foreground="{ThemeResource ApplicationForegroundThemeBrush}">
                     <ToggleButton.Content>
                         <FontIcon x:Name="Hamburger" FontFamily="Segoe MDL2 Assets" Glyph="&#xE700;" Margin="0,10,0,0"/>
                     </ToggleButton.Content>
