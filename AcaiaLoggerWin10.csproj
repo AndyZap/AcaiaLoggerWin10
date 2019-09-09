@@ -17,7 +17,7 @@
     <EnableDotNetNativeCompatibleProfile>true</EnableDotNetNativeCompatibleProfile>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{A5A43C5B-DE2A-4C0C-9213-0A381AF9435A};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
-    <PackageCertificateThumbprint>4460BE8FF16852053CC51B4E926945B170E5AACA</PackageCertificateThumbprint>
+    <PackageCertificateThumbprint>31FE22164035783F1C1D545B28E0B67D45C86036</PackageCertificateThumbprint>
     <PackageCertificateKeyFile>
     </PackageCertificateKeyFile>
     <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
