@@ -1,6 +1,6 @@
 Testo 549i uses 2 characteristics (instead of 1 for Acaia): one to write, another one to receive notifications
 
-To start the weight measurements need to write these 3 PDUs, I was not able to decipher the meaning of these, as could not find anything in the decompiled APK package.
+To start the weight measurements need to write these 3 PDUs, I was not able to decipher the meaning of these
 
 (does not matter, provided that this works): 
 
